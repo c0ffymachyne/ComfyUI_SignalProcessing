@@ -11,106 +11,24 @@ from scipy.signal import get_window
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy"))
 
 import torchaudio
-
-import comfy.model_management
-import comfy.sample
-import comfy.sampler_helpers
 import folder_paths
 
-MAX_RESOLUTION=8192
-
-
-# CODE BELOW TAKEN ALIVE FROM 
-# https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
-
-def is_url(url):
-    return url.split("://")[0] in ["http", "https"]
-
-def is_safe_path(path):
-    if "VHS_STRICT_PATHS" not in os.environ:
-        return True
-    basedir = os.path.abspath('.')
-    try:
-        common_path = os.path.commonpath([basedir, path])
-    except:
-        #Different drive on windows
-        return False
-    return common_path == basedir
-
-def strip_path(path):
-    path = path.strip()
-    if path.startswith("\""):
-        path = path[1:]
-    if path.endswith("\""):
-        path = path[:-1]
-    return path
-
-def validate_path(path, allow_none=False, allow_url=True):
-    if path is None:
-        return allow_none
-    if is_url(path):
-        #Probably not feasible to check if url resolves here
-        if not allow_url:
-            return "URLs are unsupported for this path"
-        return is_safe_path(path)
-    if not os.path.isfile(strip_path(path)):
-        return "Invalid file path: {}".format(path)
-    return is_safe_path(path)
-
-def calculate_file_hash(filename: str, hash_every_n: int = 1):
-    #Larger video files were taking >.5 seconds to hash even when cached,
-    #so instead the modified time from the filesystem is used as a hash
-    h = hashlib.sha256()
-    h.update(filename.encode())
-    h.update(str(os.path.getmtime(filename)).encode())
-    return h.hexdigest()
-
-def hash_path(path):
-    if path is None:
-        return "input"
-    if is_url(path):
-        return "url"
-    return calculate_file_hash(strip_path(path))
-
-ytdl_path = os.environ.get("VHS_YTDL", None) or shutil.which('yt-dlp') \
-        or shutil.which('youtube-dl')
-
-download_history = {}
-def try_download_video(url):
-    if ytdl_path is None:
-        return None
-    if url in download_history:
-        return download_history[url]
-    os.makedirs(folder_paths.get_temp_directory(), exist_ok=True)
-    #Format information could be added to only download audio for Load Audio,
-    #but this gets hairy if same url is also used for video.
-    #Best to just always keep defaults
-    #dl_format = ['-f', 'ba'] if is_audio else []
-    try:
-        res = subprocess.run([ytdl_path, "--print", "after_move:filepath",
-                              "-P", folder_paths.get_temp_directory(), url],
-                             capture_output=True, check=True)
-        #strip newline
-        file = res.stdout.decode('utf-8')[:-1]
-    except subprocess.CalledProcessError as e:
-        raise Exception("An error occurred in the yt-dl process:\n" \
-                + e.stderr.decode("utf-8"))
-        file = None
-    download_history[url] = file
-    return file
-
-# END CODE BELOW TAKEN ALIVE FROM 
-# https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
-
-
 class SignalProcessingLoadAudio():
+    supported_formats = ['wav','mp3','ogg','m4a','flac']
     @classmethod
     def INPUT_TYPES(s):
-        #Hide ffmpeg formats if ffmpeg isn't available
+        supported_extensions = tuple(f".{fmt.lower()}" for fmt in SignalProcessingLoadAudio.supported_formats)
+        
+        input_dir = folder_paths.get_input_directory()
+        all_items = os.listdir(input_dir)
+        filtered_files = [
+            x for x in all_items
+            if x.lower().endswith(supported_extensions)
+        ]
+        files = [os.path.join(input_dir,x) for x in filtered_files]
+
         return {
-            "required": {
-                "audio_file": ("STRING", {"default": "input/", "signal_processins": ['wav','mp3','ogg','m4a','flac']}),
-                },
+            "required":  {"audio_file": (sorted(files), {"image_upload": True})},
             "optional" : {"seek_seconds": ("FLOAT", {"default": 0, "min": 0})}
         }
 
@@ -120,24 +38,28 @@ class SignalProcessingLoadAudio():
     FUNCTION = "process"
 
     def process(self, audio_file, seek_seconds):
-        audio_file = strip_path(audio_file)
-        if audio_file is None or validate_path(audio_file) != True:
-            raise Exception("audio_file is not a valid path: " + audio_file)
-        if is_url(audio_file):
-            audio_file = try_download_video(audio_file) or audio_file
 
-        metadata = torchaudio.info(audio_file)
-        waveform, sample_rate = torchaudio.load(audio_file)
+        audio_file_path = folder_paths.get_annotated_filepath(audio_file)
+
+        metadata = torchaudio.info(audio_file_path)
+        waveform, sample_rate = torchaudio.load(audio_file_path)
         waveform = waveform.unsqueeze(0).contiguous()
         return ({'waveform': waveform, 'sample_rate': sample_rate},)
 
     @classmethod
     def IS_CHANGED(s, audio_file, seek_seconds):
-        return hash_path(audio_file)
+        audio_file_path = folder_paths.get_annotated_filepath(audio_file)
+        m = hashlib.sha256()
+        with open(audio_file_path, 'rb') as f:
+            m.update(f.read())
+        return m.digest().hex()
 
     @classmethod
-    def VALIDATE_INPUTS(s, audio_file, **kwargs):
-        return validate_path(audio_file, allow_none=True)
+    def VALIDATE_INPUTS(s, audio_file, seek_seconds):
+        if not folder_paths.exists_annotated_filepath(audio_file):
+            return "Invalid image file: {}".format(audio_file)
+
+        return True
 
 class SignalProcessingFilter:
     @classmethod
