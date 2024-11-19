@@ -1,12 +1,19 @@
 # ComfyUI Signal Processing
 
-This repo contains 3 nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) that allows for audio filtering
+This repo contains 4 nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) that allows for audio filtering
 
 ## Nodes
 
 ### SignalProcessingPaulStretch :
 This node lets you stretch audio to about 100x it's original speed whil mainting pitch. it's great for making pad sounds. It's a port of 
 fantastic algorithm of by by Nasca Octavian PAUL, his repository here : https://github.com/paulnasca/paulstretch_python
+- **audio**: input audio
+- **stretch_factor**: the stretch factor from 0 to 100
+- **window_size_seconds**: window length ins seconds. higher value create smoother stretching effect.
+
+### SignalProcessingPadSynth :
+This node is a synthesiser "PadSynth" based on an algorithm by Nasca Octavian PAUL 
+Original Source Code Here: https://zynaddsubfx.sourceforge.io/doc/PADsynth/PADsynth.htm
 - **audio**: input audio
 - **stretch_factor**: the stretch factor from 0 to 100
 - **window_size_seconds**: window length ins seconds. higher value create smoother stretching effect.
