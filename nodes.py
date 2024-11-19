@@ -56,6 +56,7 @@ def validate_path(path, allow_none=False, allow_url=True):
     if not os.path.isfile(strip_path(path)):
         return "Invalid file path: {}".format(path)
     return is_safe_path(path)
+
 def calculate_file_hash(filename: str, hash_every_n: int = 1):
     #Larger video files were taking >.5 seconds to hash even when cached,
     #so instead the modified time from the filesystem is used as a hash
@@ -63,6 +64,7 @@ def calculate_file_hash(filename: str, hash_every_n: int = 1):
     h.update(filename.encode())
     h.update(str(os.path.getmtime(filename)).encode())
     return h.hexdigest()
+
 def hash_path(path):
     if path is None:
         return "input"
@@ -124,19 +126,10 @@ class SignalProcessingLoadAudio():
         if is_url(audio_file):
             audio_file = try_download_video(audio_file) or audio_file
 
-        print("Supported audio backends:", torchaudio.list_audio_backends())
         metadata = torchaudio.info(audio_file)
-        num_channels = metadata.num_channels
         waveform, sample_rate = torchaudio.load(audio_file)
-        print('sample_rate',sample_rate)
-        # flatten to [sample_count]
         waveform = waveform.unsqueeze(0).contiguous()
-        #waveform = waveform.transpose(0, 1).reshape(-1)
-        # flatten to [1, 2, sample_count]
-        #waveform = waveform.reshape((-1,num_channels)).transpose(0,1).unsqueeze(0)
-        #audio = waveform.reshape((-1,2)).transpose(0,1).unsqueeze(0)
         return ({'waveform': waveform, 'sample_rate': sample_rate},)
-        #return (get_audio(audio_file, start_time=seek_seconds),)
 
     @classmethod
     def IS_CHANGED(s, audio_file, seek_seconds):
