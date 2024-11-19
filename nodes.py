@@ -19,6 +19,10 @@ import folder_paths
 
 MAX_RESOLUTION=8192
 
+
+# CODE BELOW TAKEN ALIVE FROM 
+# https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
+
 def is_url(url):
     return url.split("://")[0] in ["http", "https"]
 
@@ -93,6 +97,8 @@ def try_download_video(url):
     download_history[url] = file
     return file
 
+# END CODE BELOW TAKEN ALIVE FROM 
+# https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
 
 
 class SignalProcessingLoadAudio():
