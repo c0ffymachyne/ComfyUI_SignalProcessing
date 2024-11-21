@@ -1,5 +1,7 @@
 # ComfyUI Signal Processing
 
+## THIS IS WORK IN PROGRESS REPOSITORY
+
 This repo contains 4 nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) that allows for audio filtering
 
 ## Nodes
