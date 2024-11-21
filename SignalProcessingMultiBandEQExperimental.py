@@ -117,7 +117,7 @@ class SignalProcessingMultiBandEQExperimental:
                 bandwidth = f_end * 0.01
 
             gain_profile = 1 + (gain - 1) * torch.exp(-0.5 * ((freq_bins - center_freq) / (bandwidth / 2)) ** 2)
-            gain_profile = gain_profile.unsqueeze(0).unsqueeze(0)
+            gain_profile = gain_profile.unsqueeze(0).unsqueeze(2)
             gain_factors = gain_factors * gain_profile
 
         # Apply gain factors
@@ -138,7 +138,7 @@ class SignalProcessingMultiBandEQExperimental:
         bass_mask = torch.zeros_like(freq_bins)
         bass_indices = ((freq_bins >= bands['sub_bass'][0]) & (freq_bins <= bands['bass'][1]))
         bass_mask[bass_indices] = 1.0
-        bass_mask = bass_mask.unsqueeze(0).unsqueeze(0)
+        bass_mask = bass_mask.unsqueeze(0).unsqueeze(2)
 
         # Get magnitude and phase
         magnitude = torch.abs(waveform_stft_eq)
@@ -153,8 +153,10 @@ class SignalProcessingMultiBandEQExperimental:
         # Apply soft knee compression
         over_threshold = bass_magnitude_db - threshold
         compression_amount = torch.zeros_like(over_threshold)
-        compression_amount[over_threshold > -knee/2] = (1 / ratio - 1) * (over_threshold[over_threshold > -knee/2] + knee/2) ** 2 / (2 * knee)
-        compression_amount[over_threshold > knee/2] = (1 / ratio - 1) * over_threshold[over_threshold > knee/2]
+        compression_mask1 = over_threshold > -knee/2
+        compression_mask2 = over_threshold > knee/2
+        compression_amount[compression_mask1] = (1 / ratio - 1) * (over_threshold[compression_mask1] + knee/2) ** 2 / (2 * knee)
+        compression_amount[compression_mask2] = (1 / ratio - 1) * over_threshold[compression_mask2]
         gain_reduction_db = compression_amount
         gain_reduction_linear = 10 ** (gain_reduction_db / 20)
 
