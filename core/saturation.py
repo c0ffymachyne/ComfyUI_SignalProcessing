@@ -79,7 +79,7 @@ if __name__ == "__main__":
     import torchaudio
     from core.io import from_disk_as_raw_2d, audio_to_comfy_3d, audio_from_comfy_2d
 
-    samples_path = Path("/media/broot/zyzx/git/ComfyUI-0.2.4/custom_nodes/ComfyUI_SignalProcessing/audio/inputs/baxandall-normalizer_00003_.flac")
+    samples_path = Path("ComfyUI_SignalProcessing/audio/inputs/baxandall-normalizer_00003_.flac")
 
     source_path = samples_path.absolute()
     source_audio, source_audio_sample_rate = from_disk_as_raw_2d(source_path,try_gpu=True)
