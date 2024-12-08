@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Author: C0ffymachyne
+License: GPLv3
+Version: 1.0.0
+
+Description:
+    Pad Synth Choir Synthesizer port of code from this article https://zynaddsubfx.sourceforge.io/doc/PADsynth/PADsynth.htm#c_implementation
+"""
+
 import torch
 import math
 from typing import Tuple, List, Dict
@@ -130,9 +141,6 @@ class SignalProcessingPadSynthChoir:
             # Reshape waveform_out to include batch dimension: (1, C, N)
             waveform_out = waveform_out.unsqueeze(0)  # Shape: (1, C, N)
 
-            
-
-            print('SignalProcessingPadSynthChoir.waveform_out',waveform_out.shape)
             # Append to audios list
             audios.append({'waveform':waveform_out,'sample_rate': samplerate})
 

@@ -1,21 +1,32 @@
-import os, sys
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Author: C0ffymachyne
+License: GPLv3
+Version: 1.0.0
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy"))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy"))
+Description:
+    node definitions
+"""
 
-from .SignalProcessingLoadAudio import SignalProcessingLoadAudio
-from .SignalProcessingFilter import SignalProcessingFilter
-from .SignalProcessingMultiBandEQ import SignalProcessingMultibandEQ
-from .SignalProcessingPaulStretch import SignalProcessingPaulStretch
-from .SignalProcessingPadSynth import SignalProcessingPadSynth
-from .SignalProcessingPadSynthChoir import SignalProcessingPadSynthChoir
-from .SignalProcessingMixdown import SignalProcessingMixdown
-from .SignalProcessingPadSynthChoir2 import SignalProcessingPadSynthChoir2
-from .SignalProcessingVolumeControl import SignalProcessingVolumeControl
-from .SignalProcessingSpectrogram import SignalProcessingSpectrogram
-from .SignalProcessingWaveform import SignalProcessingWaveform
-from .SignalProcessingStereoWidening import SignalProcessingStereoWidening
-from .SignalProcessingMultiBandEQExperimental import SignalProcessingMultiBandEQExperimental
+# generators
+from .generators.SignalProcessingPadSynth import SignalProcessingPadSynth
+from .generators.SignalProcessingPadSynthChoir import SignalProcessingPadSynthChoir
+# effects 
+from .effects.SignalProcessingStereoWidening import SignalProcessingStereoWidening
+from .effects.SignalProcessingPaulStretch import SignalProcessingPaulStretch
+from .effects.SignalProcessingPitchShifter import SignalProcessingPitchShifter
+from .effects.SignalProcessingConvolutionReverb import SignalProcessingConvolutionReverb
+# processors
+from .processors.SignalProcessingFilter import SignalProcessingFilter
+from .processors.SignalProcessingMixdown import SignalProcessingMixdown
+from .processors.SignalProcessingLoadAudio import SignalProcessingLoadAudio
+from .processors.SignalProcessingNormalizer import SignalProcessingNormalizer
+from .processors.SignalProcessingLoudness import SignalProcessingLoudness
+from .processors.SignalProcessingBaxandallEQ import SignalProcessingBaxandallEQ,SignalProcessingBaxandall3BandEQ
+# visuals
+from .visuals.SignalProcessingSpectrogram import SignalProcessingSpectrogram
+from .visuals.SignalProcessingWaveform import SignalProcessingWaveform
         
 NODE_CLASS_MAPPINGS = {
     "SignalProcessingLoadAudio": SignalProcessingLoadAudio,
@@ -23,14 +34,16 @@ NODE_CLASS_MAPPINGS = {
     "SignalProcessingPaulStretch": SignalProcessingPaulStretch,
     "SignalProcessingPadSynth": SignalProcessingPadSynth,
     "SignalProcessingPadSynthChoir": SignalProcessingPadSynthChoir,
-    "SignalProcessingPadSynthChoir2":SignalProcessingPadSynthChoir2,
     "SignalProcessingMixdown": SignalProcessingMixdown,
-    "SignalProcessingVolumeControl" : SignalProcessingVolumeControl,
     "SignalProcessingSpectrogram" : SignalProcessingSpectrogram,
     "SignalProcessingWaveform" : SignalProcessingWaveform,
     "SignalProcessingStereoWidening" : SignalProcessingStereoWidening,
-    "SignalProcessingMultibandEQ": SignalProcessingMultibandEQ,
-    "SignalProcessingMultiBandEQExperimental": SignalProcessingMultiBandEQExperimental
+    "SignalProcessingPitchShifter":SignalProcessingPitchShifter,
+    "SignalProcessingConvolutionReverb": SignalProcessingConvolutionReverb,
+    "SignalProcessingNormalizer" : SignalProcessingNormalizer,
+    "SignalProcessingLoudness" : SignalProcessingLoudness,
+    "SignalProcessingBaxandallEQ" : SignalProcessingBaxandallEQ,
+    "SignalProcessingBaxandall3BandEQ" : SignalProcessingBaxandall3BandEQ
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -39,12 +52,14 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "SignalProcessingPaulStretch" : "(SP) PaulStretch",
     "SignalProcessingPadSynth": "(SP) PadSynth",
     "SignalProcessingPadSynthChoir": "(SP) PadSynth Choir",
-    "SignalProcessingPadSynthChoir2":"(SP) PadSynth Choir 2",
     "SignalProcessingMixdown": "(SP) Mix Down",
-    "SignalProcessingVolumeControl" : "(SP) Volume",
     "SignalProcessingSpectrogram" : "(SP) Spectogram",
     "SignalProcessingWaveform" : "(SP) Waveform",
-    "SignalProcessingStereoWidening" : "(SP) Stereo Widening",
-    "SignalProcessingMultibandEQ" : "(SP) Equalizer",
-    "SignalProcessingMultiBandEQExperimental": "(SP) Equalizer Experimental"
+    "SignalProcessingStereoWidening" : "(SP) Stereo Width",
+    "SignalProcessingPitchShifter": "(SP) PitchShift",
+    "SignalProcessingConvolutionReverb" : "(SP) Convolution Reverb",
+    "SignalProcessingNormalizer" : "(SP) Normalizer",
+    "SignalProcessingLoudness" : "(SP) Loudness",
+    "SignalProcessingBaxandallEQ" : "(SP) Baxandall EQ",
+    "SignalProcessingBaxandall3BandEQ" : "(SP) Baxandall 3 Band EQ"
 }

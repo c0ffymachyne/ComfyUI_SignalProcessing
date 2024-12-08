@@ -1,13 +1,26 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Author: C0ffymachyne
+License: GPLv3
+Version: 1.0.0
+
+Description:
+    Spectogram image node
+"""
+
 import torch
 
 from typing import List, Dict
-
 from PIL import Image
 
 import numpy as np
 import torchaudio
 
 import matplotlib.pyplot as plt
+
+from ..core.io import audio_to_comfy_3d, audio_from_comfy_3d, audio_from_comfy_2d
+from ..core.loudness import lufs_normalization, get_loudness
 
 class SignalProcessingSpectrogram:
     @classmethod
@@ -35,6 +48,8 @@ class SignalProcessingSpectrogram:
         waveform = audio_input.get('waveform')  # [channels, samples] or [batch, channels, samples]
         sample_rate = audio_input.get('sample_rate')
 
+        #waveform, sample_rate = audio_from_comfy_2d(audio_input)
+
         # Convert to mono by averaging channels
         if waveform.ndim == 3:
             # [batch, channels, samples]
@@ -61,7 +76,7 @@ class SignalProcessingSpectrogram:
             power=2.0,
             norm='slaney',
             mel_scale='htk',
-        )
+        ).to(waveform.device, dtype = waveform.dtype)
         spectrogram = spectrogram_transform(waveform)  # [1, n_mels, time_frames]
 
         # Convert to decibel scale
@@ -83,8 +98,16 @@ class SignalProcessingSpectrogram:
 
         # Convert to RGB by removing alpha channel
         spectrogram_rgb = (spectrogram_colored[:, :, :3] * 255).astype(np.uint8)  # [n_mels, time_frames, 3]
+        spectrogram_rgb = np.squeeze(spectrogram_rgb)
 
-        # Create PIL Image
+        # Check the shape and adjust if necessary
+        if len(spectrogram_rgb.shape) == 3 and spectrogram_rgb.shape[-1] == 3:
+            # Ensure the array is in uint8 format (0-255 range)
+            spectrogram_rgb = np.clip(spectrogram_rgb, 0, 255).astype(np.uint8)
+        else:
+            raise ValueError(f"Unexpected spectrogram shape: {spectrogram_rgb.shape}")
+
+        # Convert to RGB image
         spectrogram_image = Image.fromarray(spectrogram_rgb).convert("RGB")
 
         # Optionally resize for better resolution

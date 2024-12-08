@@ -1,33 +1,44 @@
-import torch
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Author: C0ffymachyne
+License: GPLv3
+Version: 1.0.0
 
+Description:
+    Pad Synthesiser port of code from this article https://zynaddsubfx.sourceforge.io/doc/PADsynth/PADsynth.htm#c_implementation
+"""
+
+
+import torch
 import math, json
 from typing import Tuple, List, Dict
+
+from ..core.io import audio_to_comfy_3d
 
 class SignalProcessingPadSynth:
     @classmethod
     def INPUT_TYPES(cls) -> Dict:
         return {
             "required": {
-                "samplerate": ("INT", {"default": 44100, "min": 8000, "max": 96000, "step": 1}),
+                "sample_rate": ("INT", {"default": 44100, "min": 8000, "max": 96000, "step": 1}),
                 "fundamental_freq": ("FLOAT", {"default": 261.0, "min": 20.0, "max": 2000.0, "step": 1.0}),
                 "bandwidth_cents": ("FLOAT", {"default": 40.0, "min": 10.0, "max": 100.0, "step": 1.0}),
-                "number_harmonics": ("INT", {"default": 64, "min": 1, "max": 128, "step": 1}),
-                "amplitude_per_harmonic": ("STRING", {"default": "", "multiline": False, "hint": "Provide a JSON array of amplitudes per harmonic, e.g., [0.0, 1.0, 0.5, ...] or leave empty for default."})
+                "number_harmonics": ("INT", {"default": 64, "min": 1, "max": 128, "step": 1})
             }
         }
 
-    RETURN_TYPES = ("AUDIO","INT")
-    RETURN_NAMES = ("audio","sample_rate")
+    RETURN_TYPES = ("AUDIO",)
+    RETURN_NAMES = ("audio",)
     CATEGORY = "Signal Processing"
     FUNCTION = "process"
 
     def process(
         self,
-        samplerate: int,
+        sample_rate: int,
         fundamental_freq: float,
         bandwidth_cents: float,
         number_harmonics: int,
-        amplitude_per_harmonic: str,
     ) -> Tuple[Dict[str, torch.Tensor]]:
         """
         Apply PADsynth algorithm to generate audio.
@@ -37,7 +48,6 @@ class SignalProcessingPadSynth:
             fundamental_freq (float): Fundamental frequency in Hz.
             bandwidth_cents (float): Bandwidth in cents for Gaussian profile.
             number_harmonics (int): Number of harmonics to generate.
-            amplitude_per_harmonic (str): JSON-formatted string specifying amplitudes per harmonic. Leave empty for defaults.
 
         Returns:
             Tuple[Dict[str, torch.Tensor]]: Generated audio with waveform and sample rate.
@@ -46,29 +56,13 @@ class SignalProcessingPadSynth:
         # Define FFT size
         N = 262144  # As per C++ code
 
-        # Initialize amplitude array A
-        if not amplitude_per_harmonic.strip():
-            # Use default amplitude distribution
-            A = torch.zeros(number_harmonics, dtype=torch.double)
-            A[0] = 0.0  # A[0] is not used
-            for i in range(1, number_harmonics):
-                A[i] = 1.0 / i
-                if (i % 2) == 0:
-                    A[i] *= 2.0
-        else:
-            # Parse JSON string to list
-            try:
-                amplitude_list = json.loads(amplitude_per_harmonic)
-                if not isinstance(amplitude_list, list):
-                    raise ValueError("amplitude_per_harmonic must be a JSON array.")
-                if len(amplitude_list) != number_harmonics:
-                    raise ValueError("Length of amplitude_per_harmonic must match number_harmonics.")
-                # Convert to torch tensor
-                A = torch.tensor(amplitude_list, dtype=torch.double)
-            except json.JSONDecodeError as e:
-                raise ValueError("amplitude_per_harmonic must be a valid JSON array.") from e
-            except Exception as e:
-                raise
+        # Use default amplitude distribution
+        A = torch.zeros(number_harmonics, dtype=torch.double)
+        A[0] = 0.0  # A[0] is not used
+        for i in range(1, number_harmonics):
+            A[i] = 1.0 / i
+            if (i % 2) == 0:
+                A[i] *= 2.0
 
         # Initialize frequency amplitude and phase arrays
         freq_amp = torch.zeros(N // 2, dtype=torch.double)
@@ -93,13 +87,13 @@ class SignalProcessingPadSynth:
         for nh in range(1, number_harmonics):
             f_nh = fundamental_freq * nh
             bw_Hz = bw_multiplier * f_nh
-            bwi = bw_Hz / (2.0 * samplerate)
-            fi = f_nh / samplerate  # Normalized frequency
+            bwi = bw_Hz / (2.0 * sample_rate)
+            fi = f_nh / sample_rate  # Normalized frequency
 
             # Create tensors for frequency bins
             i = torch.arange(N // 2, dtype=torch.double)
             # Normalized frequency for each bin
-            normalized_freq = i / N  # Equivalent to i * (samplerate / N) / samplerate = i / N
+            normalized_freq = i / N  # Equivalent to i * (sample_rate / N) / sample_rate = i / N
 
             # Compute profile
             fi_tensor = torch.full_like(i, fi)
@@ -129,14 +123,4 @@ class SignalProcessingPadSynth:
         # Prepare waveform tensor: (C, N)
         waveform_out = smp.unsqueeze(0)  # Mono audio
 
-        # Reshape waveform_out to include batch dimension: (1, C, N)
-        waveform_out = waveform_out.unsqueeze(0)  # Shape: (1, C, N)
-
-        #audios = []
-
-        #print('SignalProcessingPadSynth.waveform_out',waveform_out.shape)
-
-        #audios.append({'waveform': waveform_out, 'sample_rate': samplerate})
-
-        # Return the synthesized audio
-        return {'waveform': waveform_out, 'sample_rate': samplerate}, samplerate
+        return audio_to_comfy_3d(waveform_out,sample_rate)

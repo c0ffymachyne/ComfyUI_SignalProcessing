@@ -1,0 +1,14 @@
+[project]
+name = "ComfyUI_SignalProcessing"
+description = "Audio processing nodes for comfyui."
+version = "0.0.2"
+license = { file = "LICENSE-GPL-V3" }
+
+[project.urls]
+Repository = "https://github.com/c0ffymachyne/ComfyUI_SignalProcessing"
+
+[tool.comfy]
+PublisherId = "c0ffymachyne"
+DisplayName = "ComfyUI_SignalProcessing"
+Icon = "images/icon.jpg"
+Models = []

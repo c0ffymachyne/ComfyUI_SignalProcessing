@@ -1,7 +1,21 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Author: C0ffymachyne
+License: GPLv3
+Version: 1.0.0
+
+Description:
+    Classic Audio filter set 
+"""
 
 import torch, torchaudio
 import torch
 from typing import Dict
+
+from ..core.io import audio_to_comfy_3d, audio_from_comfy_3d
+from ..core.loudness import lufs_normalization, get_loudness
+
 
 class SignalProcessingFilter:
     @classmethod
@@ -33,8 +47,11 @@ class SignalProcessingFilter:
         Returns:
             Tuple[Dict[str, torch.Tensor]]: Filtered audio.
         """
-        waveform = audio['waveform'].squeeze(0)
-        sample_rate = audio['sample_rate']
+
+        waveform, sample_rate = audio_from_comfy_3d(audio)
+
+        loudness = get_loudness(waveform,sample_rate)
+
         nyquist = sample_rate / 2.0
 
         # Define minimum and maximum frequencies for mapping
@@ -50,8 +67,6 @@ class SignalProcessingFilter:
         log_cutoff = log_min + cutoff * (log_max - log_min)
         cutoff_freq = torch.exp(log_cutoff).item()
 
-        # Debug: Print mapped cutoff frequency
-        print(f"Normalized cutoff: {cutoff} mapped to frequency: {cutoff_freq:.2f} Hz")
 
         # Choose filter type
         if filter_type == "lowpass":
@@ -69,10 +84,6 @@ class SignalProcessingFilter:
             lower_freq = max(center_freq - bandwidth / 2.0, 20.0)  # Prevent dropping below 20 Hz
             upper_freq = min(center_freq + bandwidth / 2.0, nyquist - 100.0)  # Prevent exceeding Nyquist
 
-            # Debug: Print bandwidth details
-            print(f"Band filter with center frequency: {center_freq:.2f} Hz, "
-                  f"lower: {lower_freq:.2f} Hz, upper: {upper_freq:.2f} Hz")
-
             if filter_type == "bandpass":
                 filtered_waveform = torchaudio.functional.bandpass_biquad(
                     waveform, sample_rate, center_freq, Q=q_factor
@@ -84,8 +95,6 @@ class SignalProcessingFilter:
         else:
             raise ValueError(f"Unsupported filter type: {filter_type}")
 
-        filtered_waveform = filtered_waveform.unsqueeze(0)
+        filtered_waveform = lufs_normalization(filtered_waveform,sample_rate,loudness)
 
-        print('SignalProcessingFilter.filtered_waveform',filtered_waveform.shape)
-
-        return {'waveform': filtered_waveform, 'sample_rate': sample_rate}, sample_rate
+        return audio_to_comfy_3d(filtered_waveform,sample_rate)

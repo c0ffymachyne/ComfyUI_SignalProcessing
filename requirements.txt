@@ -1,0 +1,6 @@
+scipy
+pyfar
+numpy
+torch
+torchaudio
+pyloudnorm
