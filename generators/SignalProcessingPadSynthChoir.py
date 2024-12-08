@@ -13,17 +13,30 @@ import torch
 import math
 from typing import Tuple, List, Dict
 
+
 class SignalProcessingPadSynthChoir:
     @classmethod
     def INPUT_TYPES(cls) -> Dict:
         return {
             "required": {
-                "samplerate": ("INT", {"default": 44100, "min": 8000, "max": 96000, "step": 1}),
-                "base_freq": ("FLOAT", {"default": 130.81, "min": 20.0, "max": 2000.0, "step": 1.0}),
+                "samplerate": (
+                    "INT",
+                    {"default": 44100, "min": 8000, "max": 96000, "step": 1},
+                ),
+                "base_freq": (
+                    "FLOAT",
+                    {"default": 130.81, "min": 20.0, "max": 2000.0, "step": 1.0},
+                ),
                 "step_size": ("INT", {"default": 4, "min": 1, "max": 24, "step": 1}),
                 "num_notes": ("INT", {"default": 7, "min": 1, "max": 24, "step": 1}),
-                "bandwidth_cents": ("FLOAT", {"default": 60.0, "min": 10.0, "max": 100.0, "step": 1.0}),
-                "number_harmonics": ("INT", {"default": 64, "min": 1, "max": 128, "step": 1})
+                "bandwidth_cents": (
+                    "FLOAT",
+                    {"default": 60.0, "min": 10.0, "max": 100.0, "step": 1.0},
+                ),
+                "number_harmonics": (
+                    "INT",
+                    {"default": 64, "min": 1, "max": 128, "step": 1},
+                ),
             }
         }
 
@@ -72,11 +85,11 @@ class SignalProcessingPadSynthChoir:
             for i in range(1, number_harmonics):
                 # Calculate formants based on the C++ choir implementation
                 formants = (
-                    math.exp(-((i * f1 - 600.0) / 150.0) ** 2) +
-                    math.exp(-((i * f1 - 900.0) / 250.0) ** 2) +
-                    math.exp(-((i * f1 - 2200.0) / 200.0) ** 2) +
-                    math.exp(-((i * f1 - 2600.0) / 250.0) ** 2) +
-                    math.exp(-((i * f1) / 3000.0) ** 2) * 0.1
+                    math.exp(-(((i * f1 - 600.0) / 150.0) ** 2))
+                    + math.exp(-(((i * f1 - 900.0) / 250.0) ** 2))
+                    + math.exp(-(((i * f1 - 2200.0) / 200.0) ** 2))
+                    + math.exp(-(((i * f1 - 2600.0) / 250.0) ** 2))
+                    + math.exp(-(((i * f1) / 3000.0) ** 2)) * 0.1
                 )
                 A[i] = (1.0 / i) * formants
                 # Optionally, you can debug amplitude values
@@ -84,12 +97,14 @@ class SignalProcessingPadSynthChoir:
 
             # Initialize frequency amplitude and phase arrays
             freq_amp = torch.zeros(N // 2, dtype=torch.double)
-            freq_phase = torch.rand(N // 2, dtype=torch.double) * 2.0 * math.pi  # Random phases between 0 and 2pi
+            freq_phase = (
+                torch.rand(N // 2, dtype=torch.double) * 2.0 * math.pi
+            )  # Random phases between 0 and 2pi
 
             # Define Gaussian profile function
             def profile(fi: torch.Tensor, bwi: torch.Tensor) -> torch.Tensor:
                 x = fi / bwi
-                x_sq = x ** 2
+                x_sq = x**2
                 # Avoid computing exp(-x^2) for x_sq > 14.71280603
                 mask = x_sq <= 14.71280603
                 result = torch.zeros_like(x_sq)
@@ -130,7 +145,9 @@ class SignalProcessingPadSynthChoir:
             max_val = torch.max(torch.abs(smp))
             if max_val < 1e-5:
                 max_val = 1e-5  # Prevent division by zero
-            smp = smp / (max_val * math.sqrt(2))  # Normalize to 1/sqrt(2) as in C++ code
+            smp = smp / (
+                max_val * math.sqrt(2)
+            )  # Normalize to 1/sqrt(2) as in C++ code
 
             # Convert to float32 for saving
             smp = smp.float()
@@ -142,7 +159,7 @@ class SignalProcessingPadSynthChoir:
             waveform_out = waveform_out.unsqueeze(0)  # Shape: (1, C, N)
 
             # Append to audios list
-            audios.append({'waveform':waveform_out,'sample_rate': samplerate})
+            audios.append({"waveform": waveform_out, "sample_rate": samplerate})
 
         # Return the list of generated audios
 

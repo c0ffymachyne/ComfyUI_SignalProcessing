@@ -1,6 +1,8 @@
 # ComfyUI Signal Processing
 
+
 ## THIS IS WORK IN PROGRESS REPOSITORY
+
 
 This repo contains signal processing nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) allowing for audio manipulation. 
 
@@ -11,7 +13,7 @@ This repo contains signal processing nodes for [ComfyUI](https://github.com/comf
 - **`LICENSE-APACHE-2`** Some components are built from parts of code licensed under "Apache License Version 2".
 - **`LICENSE-CCA-ANY`** Some components are built from parts of code licensed under "Creative Commons Zero v1.0 Universal"
 
-
+---
 
 ### Latests Updates
 
@@ -21,6 +23,7 @@ This repo contains signal processing nodes for [ComfyUI](https://github.com/comf
 - **`GPU support`** - ported some of the nodes to gpu to gain speed
 - **`Removed some nodes`** - if you want them back contact me through this repository. I am planning to add new nodes with better quality
 
+---
 
 ### Mastering Nodes
 
@@ -30,29 +33,36 @@ The Baxandall EQ is a smooth, wide-band tone control circuit widely used in audi
 Its simple design and musical response make it ideal for achieving natural tonal adjustments. 
 Implementation is using the standard shelf filter equations from the Audio EQ Cookbook by Robert Bristow-Johnson
 
----
-
 #### Parameters:
 
 - **`audio`**  self explanatory... 
 - **`bass_gain_db`** Bass gain in decibels
 - **`mid_gain_db`** Mid gain in decibels
 - **`treble_gain_db`** Treble gain in decibels
-
 - **`low_freq`** : The corner frequency for the low shelf (e.g. ~100 Hz).
 - **`mid_freq`** : The center frequency for the mid peaking filter (e.g. ~1 kHz).
 - **`high_freq`** : The corner frequency for the high shelf (e.g. ~10 kHz).
-
 - **`mid_q`** : Quality factor for the mid peaking band. Adjusting Q controls the bandwidth of the mid peak. A typical Q might be 0.7 for a broad bell.
 
 ---
 
+### Enhance Harmonics
+
+Harmonic enhancer boosts selected harmonics to enrich the sound
+
+#### Parameters:
+
+- **`harmonincs`**  comma separated numbers of harmonics to boost
+- **`mode`**  whether to automatically detect base frequency based on an audio or use manual setting
+- **`base_frequency`** base frequency to use in manual mode
+- **`gain_db`** How much to boost harmonics
+- **`gain_db`** Width of the filters
+
+---
 
 ### Normalizer
 
-Normalizer is an amalgamate of multiple normalization approaches, including Loudness Units Full Scale (LUFS) wit standard default set to -14db. 
-
----
+Normalizer is an amalgamate of multiple normalization approaches, including Loudness Units Full Scale (LUFS) with standard default set to -14db.
 
 ### Parametes
 
@@ -66,13 +76,11 @@ Normalizer is an amalgamate of multiple normalization approaches, including Loud
 
 ---
 
-
 ### Loudness
 
 The get_loudness function calculates the integrated loudness of an audio signal in LUFS (Loudness Units relative to Full Scale). This is a perceptual measure of loudness, taking into account the human ear's sensitivity to different frequencies and the entire audio signal's duration.
 
 ---
-
 
 ### SignalProcessingStereoWidening: 
 Open Source Stere Widening Plugin. The implementation is a direct copy of parts of the source code corresponding to this [paper](https://www.dafx.de/paper-archive/2024/papers/DAFx24_paper_92.pdf) developed by Orchisama Das. The code is distributed under `**CC0 1.0 Universal**` license.
@@ -88,7 +96,6 @@ Open Source Stere Widening Plugin. The implementation is a direct copy of parts 
 
 ---
 
-
 ### Effects Nodes
 
 ### Convolution Reverb
@@ -96,12 +103,12 @@ Open Source Stere Widening Plugin. The implementation is a direct copy of parts 
 Convolution reverb simulates realistic acoustic spaces by applying the impulse response of a physical environment to an audio signal. 
 It captures the natural reverberation characteristics, providing authentic spatial depth and ambience.
 
-## How do I use it ? 
+
+### How do I use it ? 
 
 I recommend downloading impulse response files from this location [Voxengo-IR](https://oramics.github.io/sampled/IR/Voxengo/) and [Greg Hopkins EMT 140 Plate Reverb Impulse Response](https://oramics.github.io/sampled/IR/EMT140-Plate/). They sound absolutely fantastic and have great licensing. In order for the files to show up for selection in the convolution reverb please download the files and organize them like this : 
-- `comfyui_singalprocessing/audio/ir/Voxengo/` <- copy wave files into this directory
-- `comfyui_singalprocessing/audio/ir/EMT-140-Plate/` <- copy wav files into this directory
-
+- `comfyui_signalprocessing/audio/ir/Voxengo/` <- copy wave files into this directory
+- `comfyui_signalprocessing/audio/ir/EMT-140-Plate/` <- copy wav files into this directory
 
 #### Parameters:
 
@@ -111,13 +118,11 @@ I recommend downloading impulse response files from this location [Voxengo-IR](h
 
 ---
 
-
 ### SignalProcessingPaulStretch
 
 PaulStretch excels at extreme time-stretching with high-quality results, preserving the pitch and tonal characteristics of the original audio. 
 This node contains a port of algorithm developed by Nasca Octavian Paul.  
 [Original Source Code](https://github.com/paulnasca/paulstretch_python)
-
 
 #### Parameters:
 
@@ -135,13 +140,11 @@ This node contains a port of algorithm developed by Nasca Octavian Paul.
 
 ---
 
-
 ### SignalProcessingPadSynth :
 
 This node is a synthesiser "PadSynth" based on a PADSynth algorithm
 This node contains a port of algorithm developed by Nasca Octavian Paul
 [Original Source Code](https://zynaddsubfx.sourceforge.io/doc/PADsynth/PADsynth.htm)
-
 
 #### Parameters:
 
@@ -158,8 +161,6 @@ This node contains a port of algorithm developed by Nasca Octavian Paul
 This node is a synthesiser "PadSynth" emulating choirs
 [Original Source Code](https://zynaddsubfx.sourceforge.io/doc/PADsynth/PADsynth.htm)
 
----
-
 #### Parameters:
 
 - **`samplerate`**: samplerate
@@ -169,10 +170,13 @@ This node is a synthesiser "PadSynth" emulating choirs
 - **`bandwidth_cents`**:  bandwidth cents
 - **`number_harmonics`**: number of harmonics to produce
 
+---
 
 ### SignalProcessingFilter :
 
 Classic filters
+
+#### Parameters:
 
 - **`audio`**: input audio
 - **`cutoff`**: filter cutoff
@@ -181,10 +185,8 @@ Classic filters
 
 ---
 
-
 ### SignalProcessingMixdown
 mixdown outputs from PadSynths with volume control per note
-
 
 #### Parameters:
 
@@ -193,18 +195,14 @@ mixdown outputs from PadSynths with volume control per note
 
 ---
 
-
 ### Testing/Visualization Nodes
 
 This section contains nodes enabling basic analysis and development of other nodes
 
 ---
 
-
 ### SignalProcessingSpectrogram
 Renders Mel Spectrum Into An Image
-
----
 
 #### Parameters:
 
@@ -212,21 +210,17 @@ Renders Mel Spectrum Into An Image
 - **`image`**: image output
 
 ---
-
 
 ### SignalProcessingWaveform
 
 Renders Wave Shape Into An Image
 
----
-
 #### Parameters:
 
 - **`audio`**: audio input
 - **`image`**: image output
 
 ---
-
 
 ### SignalProcessingLoadAudio :
 

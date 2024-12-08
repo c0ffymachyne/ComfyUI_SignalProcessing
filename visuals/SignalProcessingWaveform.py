@@ -16,9 +16,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from ..core.utilities import comfy_root_to_syspath
-comfy_root_to_syspath() # add comfy to sys path for dev
+
+comfy_root_to_syspath()  # add comfy to sys path for dev
 
 from ..core.io import audio_to_comfy_3d
+
 
 class SignalProcessingWaveform:
     @classmethod
@@ -30,10 +32,16 @@ class SignalProcessingWaveform:
             "optional": {
                 "color": ("STRING", {"default": "black"}),
                 "background_color": ("STRING", {"default": "white"}),
-                "width": ("INT", {"default": 800, "min": 100, "max": 4000, "step": 100}),
+                "width": (
+                    "INT",
+                    {"default": 800, "min": 100, "max": 4000, "step": 100},
+                ),
                 "height": ("INT", {"default": 200, "min": 50, "max": 1000, "step": 50}),
-                "line_width": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 10.0, "step": 0.1}),
-            }
+                "line_width": (
+                    "FLOAT",
+                    {"default": 1.0, "min": 0.1, "max": 10.0, "step": 0.1},
+                ),
+            },
         }
 
     RETURN_TYPES = ("IMAGE",)
@@ -41,9 +49,19 @@ class SignalProcessingWaveform:
     CATEGORY = "Audio Processing"
     FUNCTION = "process"
 
-    def process(self, audio_input, color="white", background_color="black", width=800, height=200, line_width=1.0):
-        waveform = audio_input.get('waveform')  # [channels, samples] or [batch, channels, samples]
-        sample_rate = audio_input.get('sample_rate')
+    def process(
+        self,
+        audio_input,
+        color="white",
+        background_color="black",
+        width=800,
+        height=200,
+        line_width=1.0,
+    ):
+        waveform = audio_input.get(
+            "waveform"
+        )  # [channels, samples] or [batch, channels, samples]
+        sample_rate = audio_input.get("sample_rate")
 
         # Convert to mono by averaging channels
         if waveform.ndim == 3:
@@ -63,13 +81,13 @@ class SignalProcessingWaveform:
             raise ValueError(f"Unsupported waveform shape: {waveform.shape}")
 
         # Convert waveform to numpy
-        waveform = waveform.to(dtype = torch.float32)
+        waveform = waveform.to(dtype=torch.float32)
         waveform_np = waveform.squeeze().detach().cpu().numpy()  # [samples]
 
         # Create a matplotlib figure without axes
-        plt.figure(figsize=(width/100, height/100), dpi=96)
-        plt.axis('off')
-        plt.margins(0,0)
+        plt.figure(figsize=(width / 100, height / 100), dpi=96)
+        plt.axis("off")
+        plt.margins(0, 0)
         plt.gca().set_facecolor(background_color)
         plt.gca().set_position([0, 0, 1, 1])
 
@@ -80,7 +98,7 @@ class SignalProcessingWaveform:
 
         # Save the plot to a buffer
         buf = BytesIO()
-        plt.savefig(buf, format='png', bbox_inches='tight', pad_inches=0)
+        plt.savefig(buf, format="png", bbox_inches="tight", pad_inches=0)
         plt.close()
 
         # Load the image from the buffer
@@ -96,7 +114,8 @@ class SignalProcessingWaveform:
         # Convert to torch tensor and add batch dimension
         image = torch.from_numpy(image_np)[None,]
 
-        return (image, )
+        return (image,)
+
 
 class SignalProcessingWaveform2:
     @classmethod
@@ -108,10 +127,16 @@ class SignalProcessingWaveform2:
             "optional": {
                 "color": ("STRING", {"default": "black"}),
                 "background_color": ("STRING", {"default": "white"}),
-                "width": ("INT", {"default": 800, "min": 100, "max": 4000, "step": 100}),
+                "width": (
+                    "INT",
+                    {"default": 800, "min": 100, "max": 4000, "step": 100},
+                ),
                 "height": ("INT", {"default": 200, "min": 50, "max": 1000, "step": 50}),
-                "line_width": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 10.0, "step": 0.1}),
-            }
+                "line_width": (
+                    "FLOAT",
+                    {"default": 1.0, "min": 0.1, "max": 10.0, "step": 0.1},
+                ),
+            },
         }
 
     RETURN_TYPES = ("IMAGE",)
@@ -119,9 +144,19 @@ class SignalProcessingWaveform2:
     CATEGORY = "Audio Processing"
     FUNCTION = "process"
 
-    def process(self, audio_input, color="black", background_color="white", width=800, height=200, line_width=1.0):
-        waveform = audio_input.get('waveform')  # [channels, samples] or [batch, channels, samples]
-        sample_rate = audio_input.get('sample_rate')
+    def process(
+        self,
+        audio_input,
+        color="black",
+        background_color="white",
+        width=800,
+        height=200,
+        line_width=1.0,
+    ):
+        waveform = audio_input.get(
+            "waveform"
+        )  # [channels, samples] or [batch, channels, samples]
+        sample_rate = audio_input.get("sample_rate")
 
         # Convert to mono by averaging channels
         if waveform.ndim == 3:
@@ -146,7 +181,7 @@ class SignalProcessingWaveform2:
 
         # Create a matplotlib figure without axes
         plt.figure(figsize=(width / 100, height / 100), dpi=96)
-        plt.axis('off')
+        plt.axis("off")
         plt.margins(0, 0)
         ax = plt.gca()
         ax.set_facecolor(background_color)
@@ -159,7 +194,7 @@ class SignalProcessingWaveform2:
 
         # Save the plot to a buffer
         buf = BytesIO()
-        plt.savefig(buf, format='png', bbox_inches='tight', pad_inches=0)
+        plt.savefig(buf, format="png", bbox_inches="tight", pad_inches=0)
         plt.close()
 
         # Load the image from the buffer
@@ -175,15 +210,16 @@ class SignalProcessingWaveform2:
         # Convert to torch tensor and add batch dimension
         image = torch.from_numpy(image_np).permute(2, 0, 1).unsqueeze(0)  # [1, 3, H, W]
 
-        return (image, )
+        return (image,)
+
 
 if __name__ == "__main__":
 
     from pathlib import Path
     from ..core.io import from_disk_as_raw_2d, audio_to_comfy_3d
-    
+
     node = SignalProcessingWaveform()
-    samples_path = Path('ComfyUI_SignalProcessing/audio/inputs/song.mp4')
+    samples_path = Path("ComfyUI_SignalProcessing/audio/inputs/song.mp4")
 
     source_path = samples_path.absolute()
     source_audio, source_audio_sample_rate = from_disk_as_raw_2d(source_path)
@@ -192,6 +228,4 @@ if __name__ == "__main__":
 
     result = node.process(input)[0]
 
-    print('result',result)
-
-
+    print("result", result)

@@ -9,7 +9,7 @@ Description:
     Audio loading node
 """
 
-import sys,os 
+import sys, os
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy"))
 
@@ -17,24 +17,30 @@ from ..core.io import from_disk_as_dict_3d
 
 import folder_paths
 
-class SignalProcessingLoadAudio():
-    supported_formats = ['wav','mp3','ogg','m4a','flac','mp4']
-    input_dir = os.path.join(folder_paths.get_input_directory(),'samples')
+
+class SignalProcessingLoadAudio:
+    supported_formats = ["wav", "mp3", "ogg", "m4a", "flac", "mp4"]
+    input_dir = os.path.join(folder_paths.get_input_directory(), "samples")
+
     @classmethod
     def INPUT_TYPES(s):
-        supported_extensions = tuple(f".{fmt.lower()}" for fmt in SignalProcessingLoadAudio.supported_formats)
+        supported_extensions = tuple(
+            f".{fmt.lower()}" for fmt in SignalProcessingLoadAudio.supported_formats
+        )
 
         files, _ = folder_paths.recursive_search(SignalProcessingLoadAudio.input_dir)
-        filtered_files = [
-            x for x in files
-            if x.lower().endswith(supported_extensions)
+        filtered_files = [x for x in files if x.lower().endswith(supported_extensions)]
+        files = [
+            os.path.join(SignalProcessingLoadAudio.input_dir, x) for x in filtered_files
         ]
-        files = [os.path.join(SignalProcessingLoadAudio.input_dir,x) for x in filtered_files]
 
         return {
-            "required":  {
+            "required": {
                 "audio_file": (sorted(files), {"image_upload": True}),
-                "gain": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 8.0, "step": 0.01}),
+                "gain": (
+                    "FLOAT",
+                    {"default": 1.0, "min": 0.0, "max": 8.0, "step": 0.01},
+                ),
             },
         }
 
@@ -44,4 +50,4 @@ class SignalProcessingLoadAudio():
     FUNCTION = "process"
 
     def process(self, audio_file, gain):
-        return from_disk_as_dict_3d(audio_file=audio_file,gain=gain)
+        return from_disk_as_dict_3d(audio_file=audio_file, gain=gain)

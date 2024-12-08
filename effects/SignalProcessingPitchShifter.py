@@ -15,7 +15,8 @@ from typing import Tuple, Dict
 import torchaudio.functional as F
 
 from ..core.utilities import comfy_root_to_syspath
-comfy_root_to_syspath() # add comfy to sys path for dev
+
+comfy_root_to_syspath()  # add comfy to sys path for dev
 
 from ..core.io import audio_from_comfy_3d, audio_to_comfy_3d
 from ..core.loudness import lufs_normalization, get_loudness
@@ -27,7 +28,10 @@ class SignalProcessingPitchShifter:
         return {
             "required": {
                 "input_audio": ("AUDIO",),  # Input audio
-                "pitch_shift_factor": ("INT", {"default": 2, "min": -12*4, "max": 12*4, "step": 1}),
+                "pitch_shift_factor": (
+                    "INT",
+                    {"default": 2, "min": -12 * 4, "max": 12 * 4, "step": 1},
+                ),
             },
             "optional": {},
         }
@@ -43,15 +47,19 @@ class SignalProcessingPitchShifter:
         pitch_shift_factor: int = 2,
     ) -> Tuple[Dict[str, torch.Tensor]]:
 
-        try_gpu : bool = True
-        waveform, sample_rate = audio_from_comfy_3d(input_audio,try_gpu=try_gpu)
+        try_gpu: bool = True
+        waveform, sample_rate = audio_from_comfy_3d(input_audio, try_gpu=try_gpu)
 
-        loudness = get_loudness(waveform,sample_rate)
+        loudness = get_loudness(waveform, sample_rate)
 
-        pitch_shifted_waveform = F.pitch_shift(waveform,sample_rate,pitch_shift_factor)
-        pitch_shifted_waveform = lufs_normalization(pitch_shifted_waveform,sample_rate,loudness)
+        pitch_shifted_waveform = F.pitch_shift(
+            waveform, sample_rate, pitch_shift_factor
+        )
+        pitch_shifted_waveform = lufs_normalization(
+            pitch_shifted_waveform, sample_rate, loudness
+        )
 
-        return audio_to_comfy_3d(pitch_shifted_waveform,sample_rate)
+        return audio_to_comfy_3d(pitch_shifted_waveform, sample_rate)
 
 
 if __name__ == "__main__":
@@ -64,24 +72,26 @@ if __name__ == "__main__":
     node = SignalProcessingPitchShifter()
     types = node.INPUT_TYPES()
 
-    samples_path = Path('ComfyUI_SignalProcessing/audio/samples')
+    samples_path = Path("ComfyUI_SignalProcessing/audio/samples")
 
-    samples = list(samples_path.rglob('*.*'))
+    samples = list(samples_path.rglob("*.*"))
 
     source_path = samples[1].absolute()
-    source_audio,source_audio_sample_rate = from_disk_as_raw_2d(source_path)
+    source_audio, source_audio_sample_rate = from_disk_as_raw_2d(source_path)
 
-    input = audio_to_comfy_3d(source_audio,source_audio_sample_rate)[0]
+    input = audio_to_comfy_3d(source_audio, source_audio_sample_rate)[0]
 
-    pitch_shift_factor=-4
+    pitch_shift_factor = -4
 
-    result = node.process(input,pitch_shift_factor=pitch_shift_factor)[0]
+    result = node.process(input, pitch_shift_factor=pitch_shift_factor)[0]
 
     output_audio, sample_rate_audio = audio_from_comfy_2d(result)
 
-    combined = combine_audio_files( source_audio.cpu(),
-                                    output_audio.cpu(),
-                                    sample_rate_audio,
-                                    chunk_duration=4.0
-                                    )
-    torchaudio.save('ComfyUI_SignalProcessing/audio/tests/pitchshifter.wav',combined.cpu(),sample_rate_audio)
+    combined = combine_audio_files(
+        source_audio.cpu(), output_audio.cpu(), sample_rate_audio, chunk_duration=4.0
+    )
+    torchaudio.save(
+        "ComfyUI_SignalProcessing/audio/tests/pitchshifter.wav",
+        combined.cpu(),
+        sample_rate_audio,
+    )

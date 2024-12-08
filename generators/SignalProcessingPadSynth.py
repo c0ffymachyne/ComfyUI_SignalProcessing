@@ -16,15 +16,28 @@ from typing import Tuple, List, Dict
 
 from ..core.io import audio_to_comfy_3d
 
+
 class SignalProcessingPadSynth:
     @classmethod
     def INPUT_TYPES(cls) -> Dict:
         return {
             "required": {
-                "sample_rate": ("INT", {"default": 44100, "min": 8000, "max": 96000, "step": 1}),
-                "fundamental_freq": ("FLOAT", {"default": 261.0, "min": 20.0, "max": 2000.0, "step": 1.0}),
-                "bandwidth_cents": ("FLOAT", {"default": 40.0, "min": 10.0, "max": 100.0, "step": 1.0}),
-                "number_harmonics": ("INT", {"default": 64, "min": 1, "max": 128, "step": 1})
+                "sample_rate": (
+                    "INT",
+                    {"default": 44100, "min": 8000, "max": 96000, "step": 1},
+                ),
+                "fundamental_freq": (
+                    "FLOAT",
+                    {"default": 261.0, "min": 20.0, "max": 2000.0, "step": 1.0},
+                ),
+                "bandwidth_cents": (
+                    "FLOAT",
+                    {"default": 40.0, "min": 10.0, "max": 100.0, "step": 1.0},
+                ),
+                "number_harmonics": (
+                    "INT",
+                    {"default": 64, "min": 1, "max": 128, "step": 1},
+                ),
             }
         }
 
@@ -66,12 +79,14 @@ class SignalProcessingPadSynth:
 
         # Initialize frequency amplitude and phase arrays
         freq_amp = torch.zeros(N // 2, dtype=torch.double)
-        freq_phase = torch.rand(N // 2, dtype=torch.double) * 2.0 * math.pi  # Random phases between 0 and 2pi
+        freq_phase = (
+            torch.rand(N // 2, dtype=torch.double) * 2.0 * math.pi
+        )  # Random phases between 0 and 2pi
 
         # Define Gaussian profile function
         def profile(fi: torch.Tensor, bwi: torch.Tensor) -> torch.Tensor:
             x = fi / bwi
-            x_sq = x ** 2
+            x_sq = x**2
             # Avoid computing exp(-x^2) for x_sq > 14.71280603
             mask = x_sq <= 14.71280603
             result = torch.zeros_like(x_sq)
@@ -93,7 +108,9 @@ class SignalProcessingPadSynth:
             # Create tensors for frequency bins
             i = torch.arange(N // 2, dtype=torch.double)
             # Normalized frequency for each bin
-            normalized_freq = i / N  # Equivalent to i * (sample_rate / N) / sample_rate = i / N
+            normalized_freq = (
+                i / N
+            )  # Equivalent to i * (sample_rate / N) / sample_rate = i / N
 
             # Compute profile
             fi_tensor = torch.full_like(i, fi)
@@ -123,4 +140,4 @@ class SignalProcessingPadSynth:
         # Prepare waveform tensor: (C, N)
         waveform_out = smp.unsqueeze(0)  # Mono audio
 
-        return audio_to_comfy_3d(waveform_out,sample_rate)
+        return audio_to_comfy_3d(waveform_out, sample_rate)

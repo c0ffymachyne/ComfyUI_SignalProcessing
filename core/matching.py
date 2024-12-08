@@ -17,8 +17,9 @@ from torch.optim import Adam
 def approximate_loudness_matching(audio, target_loudness=-14.0):
     rms = torch.sqrt(torch.mean(audio**2))
     current_loudness = 20 * torch.log10(rms + 1e-6)
-    gain = 10**((target_loudness - current_loudness) / 20.0)
+    gain = 10 ** ((target_loudness - current_loudness) / 20.0)
     return audio * gain
+
 
 def waveform_matching(audio, target_audio, lr=0.01, steps=100):
     audio = audio.clone().requires_grad_(True)
@@ -29,5 +30,5 @@ def waveform_matching(audio, target_audio, lr=0.01, steps=100):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-    
+
     return audio.detach()
