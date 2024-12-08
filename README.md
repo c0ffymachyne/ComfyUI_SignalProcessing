@@ -50,8 +50,7 @@ Implementation is using the standard shelf filter equations from the Audio EQ Co
 
 ### Normalizer
 
-Normalizer is an amalgamate of multiple normalization approaches, including Loudness Units Full Scale (LUFS) wit standard default set to -14db. This 
-will set loudness of your video a standard
+Normalizer is an amalgamate of multiple normalization approaches, including Loudness Units Full Scale (LUFS) wit standard default set to -14db. 
 
 ---
 
