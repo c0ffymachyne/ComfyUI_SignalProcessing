@@ -11,22 +11,20 @@ Description:
 
 import torch
 
-from typing import List, Dict
 from PIL import Image
+
+from typing import Dict, Tuple, Any, Type, List
 
 import numpy as np
 import torchaudio
 
 import matplotlib.pyplot as plt
 
-from ..core.io import audio_to_comfy_3d, audio_from_comfy_3d, audio_from_comfy_2d
-from ..core.loudness import lufs_normalization, get_loudness
-
 
 class SignalProcessingSpectrogram:
     @classmethod
-    def INPUT_TYPES(cls):
-        cmaps = ["viridis", "plasma", "inferno", "magma", "cividis"]
+    def INPUT_TYPES(cls: Type["SignalProcessingSpectrogram"]) -> Dict[str, Any]:
+        cmaps: List[str] = ["viridis", "plasma", "inferno", "magma", "cividis"]
         return {
             "required": {
                 "audio_input": ("AUDIO",),
@@ -51,22 +49,36 @@ class SignalProcessingSpectrogram:
 
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("spectrogram_image",)
-    CATEGORY = "Audio Processing"
+    CATEGORY = "Signal Processing"
     FUNCTION = "process"
 
     def process(
         self,
-        audio_input,
-        color_map,
-        n_fft=2048,
-        hop_length=512,
-        n_mels=128,
-        top_db=80.0,
-    ):
-        waveform = audio_input.get(
-            "waveform"
-        )  # [channels, samples] or [batch, channels, samples]
+        audio_input: Dict[str, torch.Tensor],
+        color_map: str = "viridis",
+        n_fft: int = 2048,
+        hop_length: int = 512,
+        n_mels: int = 128,
+        top_db: float = 80.0,
+    ) -> Tuple[torch.Tensor]:
+        waveform = audio_input.get("waveform")
         sample_rate = audio_input.get("sample_rate")
+
+        # Validate that waveform and sample_rate are not None
+        if waveform is None:
+            raise ValueError("The 'waveform' key is missing or None in 'audio_input'.")
+        if not isinstance(waveform, torch.Tensor):
+            raise TypeError(
+                f"Expected 'waveform' to be a torch.Tensor, got {type(waveform)}."
+            )
+        if sample_rate is None:
+            raise ValueError(
+                "The 'sample_rate' key is missing or None in 'audio_input'."
+            )
+        if not isinstance(sample_rate, int):
+            raise TypeError(
+                f"Expected 'sample_rate' to be an int, got {type(sample_rate)}."
+            )
 
         # waveform, sample_rate = audio_from_comfy_2d(audio_input)
 

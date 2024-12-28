@@ -9,13 +9,15 @@ Description:
     Audio loading node
 """
 
-import sys, os
-
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy"))
+import sys
+import os
+import torch
+from typing import Dict, Tuple, Any, Union
 
 from ..core.io import from_disk_as_dict_3d
-
 import folder_paths
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy"))
 
 
 class SignalProcessingLoadAudio:
@@ -23,7 +25,7 @@ class SignalProcessingLoadAudio:
     input_dir = os.path.join(folder_paths.get_input_directory(), "samples")
 
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(s) -> Dict[str, Any]:
         supported_extensions = tuple(
             f".{fmt.lower()}" for fmt in SignalProcessingLoadAudio.supported_formats
         )
@@ -49,5 +51,7 @@ class SignalProcessingLoadAudio:
     CATEGORY = "Signal Processing"
     FUNCTION = "process"
 
-    def process(self, audio_file, gain):
+    def process(
+        self, audio_file: str, gain: float
+    ) -> Tuple[Dict[str, Union[torch.Tensor, int]]]:
         return from_disk_as_dict_3d(audio_file=audio_file, gain=gain)

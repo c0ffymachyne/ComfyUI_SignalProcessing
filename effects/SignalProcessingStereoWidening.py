@@ -14,9 +14,7 @@ import sys
 import math
 import torch
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy"))
-
-
+from typing import Dict, Any, Tuple, Union
 from ..core.io import audio_from_comfy_2d, audio_to_comfy_3d
 from ..core.loudness import lufs_normalization, get_loudness
 from ..core.widening import (
@@ -25,8 +23,10 @@ from ..core.widening import (
     FilterbankType,
 )
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy"))
 
-def interpolate(t, a, b):
+
+def interpolate(t: float, a: float, b: float) -> float:
     if not 0.0 <= t <= 1.0:
         raise ValueError("t must be in the range [0.0, 1.0]")
     return a + t * (b - a)
@@ -34,7 +34,7 @@ def interpolate(t, a, b):
 
 class SignalProcessingStereoWidening:
     @classmethod
-    def INPUT_TYPES(cls):
+    def INPUT_TYPES(cls) -> Dict[str, Any]:
         return {
             "required": {
                 "mode": (["decorrelation", "simple"],),
@@ -50,12 +50,18 @@ class SignalProcessingStereoWidening:
 
     RETURN_TYPES = ("AUDIO",)
     RETURN_NAMES = ("widened_audio",)
-    CATEGORY = "Audio Processing"
+    CATEGORY = "Signal Processing"
     FUNCTION = "process"
 
-    def process(self, mode, audio_input, width=1.2):
+    def process(
+        self,
+        mode: str,
+        audio_input: Dict[str, Union[torch.Tensor, int]],
+        width: float = 1.2,
+    ) -> Tuple[Dict[str, Union[torch.Tensor, int]]]:
         """
-        Widen stereo audio or convert mono audio to wide stereo using the provided widening algorithm.
+        Widen stereo audio or convert mono audio to wide stereo
+        using the provided widening algorithm.
 
         Parameters:
             audio_input (Dict): Dictionary containing 'waveform' and 'sample_rate'.
@@ -76,7 +82,8 @@ class SignalProcessingStereoWidening:
 
             if channels not in [1, 2]:
                 raise ValueError(
-                    f"Unsupported number of channels: {channels}. Only mono and stereo are supported."
+                    f"Unsupported number of channels: {channels}. \
+                        Only mono and stereo are supported."
                 )
 
             # Calculate coefficients based on the provided width parameter
@@ -146,11 +153,11 @@ class SignalProcessingStereoWidening:
                 sample_rate,
                 filterbank_type,
                 decorellation_type,
-                (beta, beta),
+                [beta, beta],
                 cutoff_frequency_hz,
             )
-
-            widened_waveform = torch.from_numpy(stereoWidener.process())
+            widener_result = stereoWidener.process()
+            widened_waveform = torch.from_numpy(widener_result)
             widened_waveform = widened_waveform.T
 
             widened_waveform = lufs_normalization(
@@ -158,3 +165,5 @@ class SignalProcessingStereoWidening:
             )
 
             return audio_to_comfy_3d(widened_waveform, sample_rate)
+
+        return audio_to_comfy_3d(waveform, sample_rate)

@@ -12,7 +12,12 @@ Description:
 import torch
 
 
-def combine_audio_files(waveform_a, waveform_b, sample_rate, chunk_duration=2.0):
+def combine_audio_files(
+    waveform_a: torch.Tensor,
+    waveform_b: torch.Tensor,
+    sample_rate: int,
+    chunk_duration: float = 2.0,
+) -> torch.Tensor:
     """
     Combine two audio files by alternating 2-second chunks, cropping to the shorter audio.
 

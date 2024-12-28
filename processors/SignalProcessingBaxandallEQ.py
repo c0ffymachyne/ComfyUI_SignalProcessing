@@ -13,17 +13,15 @@ Description:
 import torch
 import torchaudio
 import math
+from typing import Dict, Any, Tuple, Union
 
 from ..core.io import audio_to_comfy_3d, audio_from_comfy_3d
 from ..core.loudness import lufs_normalization, get_loudness
 
-import torch
-import math
-
 
 class SignalProcessingBaxandallEQ:
     @classmethod
-    def INPUT_TYPES(cls):
+    def INPUT_TYPES(cls) -> Dict[str, Any]:
         return {
             "required": {
                 "audio_input": ("AUDIO",),
@@ -40,10 +38,15 @@ class SignalProcessingBaxandallEQ:
 
     RETURN_TYPES = ("AUDIO",)
     RETURN_NAMES = ("processed_audio",)
-    CATEGORY = "Audio Processing"
+    CATEGORY = "Signal Processing"
     FUNCTION = "process"
 
-    def process(self, audio_input, bass_gain_db=0.0, treble_gain_db=0.0):
+    def process(
+        self,
+        audio_input: Dict[str, Union[torch.Tensor, int]],
+        bass_gain_db: float = 0.0,
+        treble_gain_db: float = 0.0,
+    ) -> Tuple[Dict[str, torch.Tensor]]:
         waveform, sample_rate = audio_from_comfy_3d(audio_input, try_gpu=True)
         loudness = get_loudness(waveform, sample_rate)
 
@@ -72,7 +75,9 @@ class SignalProcessingBaxandallEQ:
         waveform = lufs_normalization(waveform, sample_rate, loudness)
         return audio_to_comfy_3d(waveform, sample_rate)
 
-    def design_rbj_shelf(self, sr, freq, gain_db, shelf_type="low"):
+    def design_rbj_shelf(
+        self, sr: int, freq: float, gain_db: float, shelf_type: str = "low"
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         # RBJ Audio EQ Cookbook shelf filters
         A = 10.0 ** (gain_db / 40.0)
         w0 = 2 * math.pi * freq / sr
@@ -103,7 +108,7 @@ class SignalProcessingBaxandallEQ:
 
 class SignalProcessingBaxandall3BandEQ:
     @classmethod
-    def INPUT_TYPES(cls):
+    def INPUT_TYPES(cls) -> Dict[str, Any]:
         return {
             "required": {
                 "audio_input": ("AUDIO",),
@@ -140,12 +145,12 @@ class SignalProcessingBaxandall3BandEQ:
 
     RETURN_TYPES = ("AUDIO",)
     RETURN_NAMES = ("processed_audio",)
-    CATEGORY = "Audio Processing"
+    CATEGORY = "Signal Processing"
     FUNCTION = "process"
 
     def process(
         self,
-        audio_input,
+        audio_input: Dict[str, Union[torch.Tensor, int]],
         bass_gain_db: float = 0.0,
         mid_gain_db: float = 0.0,
         treble_gain_db: float = 0.0,
@@ -153,7 +158,7 @@ class SignalProcessingBaxandall3BandEQ:
         mid_freq: float = 1000.0,
         high_freq: float = 10000.0,
         mid_q: float = 0.7,
-    ):
+    ) -> Tuple[Dict[str, Union[torch.Tensor, int]]]:
 
         waveform, sample_rate = audio_from_comfy_3d(audio_input, try_gpu=True)
         device = waveform.device
@@ -187,7 +192,9 @@ class SignalProcessingBaxandall3BandEQ:
 
         return audio_to_comfy_3d(waveform, sample_rate)
 
-    def design_rbj_shelf(self, sr, freq, gain_db, shelf_type="low"):
+    def design_rbj_shelf(
+        self, sr: int, freq: float, gain_db: float, shelf_type: str = "low"
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         # RBJ audio EQ cookbook formula for shelving filters
         A = 10.0 ** (gain_db / 40.0)
         w0 = 2.0 * math.pi * freq / sr
@@ -216,7 +223,9 @@ class SignalProcessingBaxandall3BandEQ:
         a = torch.tensor([1.0, a1 / a0, a2 / a0], dtype=torch.float64)
         return b, a
 
-    def design_rbj_peak(self, sr, freq, gain_db, Q=0.7):
+    def design_rbj_peak(
+        self, sr: int, freq: float, gain_db: float, Q: float = 0.7
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         # RBJ audio EQ cookbook peak filter
         A = 10.0 ** (gain_db / 40.0)
         w0 = 2.0 * math.pi * freq / sr
@@ -233,55 +242,3 @@ class SignalProcessingBaxandall3BandEQ:
         b = torch.tensor([b0 / a0, b1 / a0, b2 / a0], dtype=torch.float64)
         a = torch.tensor([1.0, a1 / a0, a2 / a0], dtype=torch.float64)
         return b, a
-
-
-if __name__ == "__main__":
-    import torchaudio
-    from pathlib import Path
-    from ..core.io import from_disk_as_raw_2d, audio_to_comfy_3d, audio_from_comfy_2d
-
-    node = SignalProcessingBaxandallEQ()
-    samples_path = Path("ComfyUI_SignalProcessing/audio/inputs/song.mp4")
-
-    source_path = samples_path.absolute()
-    source_audio, source_audio_sample_rate = from_disk_as_raw_2d(source_path)
-    input = audio_to_comfy_3d(source_audio, source_audio_sample_rate)[0]
-
-    # Test with some gain settings
-    result = node.process(input, bass_gain_db=5.0, treble_gain_db=-3.0)[0]
-
-    output_audio, sample_rate_audio = audio_from_comfy_2d(result)
-
-    # Save output for analysis
-    torchaudio.save(
-        "ComfyUI_SignalProcessing/audio/tests/baxandall_eq.wav",
-        output_audio.cpu(),
-        sample_rate_audio,
-    )
-
-    node = SignalProcessingBaxandall3BandEQ()
-
-    # Example usage:
-    # Provide a test audio file path
-    test_audio_path = Path("ComfyUI_SignalProcessing/audio/samples/test_audio.wav")
-    source_audio, source_audio_sample_rate = from_disk_as_raw_2d(test_audio_path)
-    input_tensors = audio_to_comfy_3d(source_audio, source_audio_sample_rate)[0]
-
-    # Apply EQ with some settings:
-    result = node.process(
-        input_tensors,
-        bass_gain_db=4.0,
-        mid_gain_db=-2.0,
-        treble_gain_db=3.0,
-        low_freq=100,
-        mid_freq=1000,
-        high_freq=10000,
-        mid_q=0.7,
-    )[0]
-
-    output_audio, out_sr = audio_from_comfy_2d(result)
-    torchaudio.save(
-        "ComfyUI_SignalProcessing/audio/tests/3band_baxandall_eq_output.wav",
-        output_audio.cpu(),
-        out_sr,
-    )

@@ -7,13 +7,14 @@ Version: 1.0.0
 
 Description:
     Open Source Stereo Widening Plugin
-    The copyright of the source code is waived by the CCO-1.0 license putting it in public domain with some nuance, read the license please for more details.
+    The copyright of the source code is waived by the CCO-1.0 license putting it
+    in public domain with some nuance, read the license please for more details.
 
     This is directy copy of the part of the code corresponding paper by Orchisama Das
         https://www.dafx.de/paper-archive/2024/papers/DAFx24_paper_92.pdf
 
     License : Creative Commons Zero v1.0 Universal
-    Link To The License : 
+    Link To The License:
         https://github.com/orchidas/StereoWidener/blob/main/LICENSE
 
     Repository : https://github.com/orchidas/StereoWidener
@@ -27,20 +28,19 @@ import numpy.typing as npt
 
 from pathlib import Path
 from enum import Enum
-from typing import Optional, Dict, Union, Tuple
+from typing import Optional, Dict, Union, Tuple, List
 from abc import ABC
 from scipy.signal import sosfilt
 from scipy.signal import fftconvolve
 
+from numpy.typing import NDArray
+import matplotlib.pyplot as plt
 
 this_directory = os.path.dirname(os.path.realpath(__file__))
 data_directory = os.path.join(os.path.split(this_directory)[0], "data", "widener")
 
 VN_PATH = Path(f"{data_directory}/init_vn_filters.txt")
 OPT_VN_PATH = Path(f"{data_directory}/opt_vn_filters.txt")
-
-print(VN_PATH.absolute())
-print(os.path.dirname(os.path.realpath(__file__)))
 
 
 class FilterbankType(Enum):
@@ -54,16 +54,12 @@ class DecorrelationType(Enum):
     OPT_VELVET = "opt_velvet"
 
 
-import numpy as np
-from numpy.typing import ArrayLike, NDArray
-from typing import List
-import matplotlib.pyplot as plt
-
 _HIGH_EPS = 1e9
 
 
 def ms_to_samps(ms: npt.NDArray[float], /, fs: float) -> npt.NDArray[int]:
-    """Calculate the nearest integer number of samples corresponding to the given time duration in milliseconds.
+    """Calculate the nearest integer number of samples
+    corresponding to the given time duration in milliseconds.
 
     Args:
         ms (NDArray): Duration, in milliseconds
@@ -106,7 +102,7 @@ def warp_pole_angle(rho: float, pole_freq: Union[float, np.ndarray]) -> npt.NDAr
 
 def decorrelate_allpass_filters(
     fs: float, nbiquads: int = 250, max_grp_del_ms: float = 30.0
-):
+) -> npt.NDArray:
     """
     Return cascaded allpass SOS sections with randomised phase to perform signal decorrelation
     Args:
@@ -147,7 +143,7 @@ def process_allpass(
     fs: float,
     num_biquads: int = 200,
     max_grp_del_ms: float = 30.0,
-) -> np.ndarray:
+) -> npt.NDArray:
     """
     For an input stereo signal, pass both channels through
     cascade of allpass filters, and return the output
@@ -177,7 +173,7 @@ class LeakyIntegrator:
     """Leaky integrator for signal envelope detection"""
 
     def __init__(
-        self, fs: float, attack_time_ms: float = 5.0, release_time_ms: float = 50.0
+        self, fs: int, attack_time_ms: float = 5.0, release_time_ms: float = 50.0
     ):
         self.fs = fs
         self.attack_time_ms = attack_time_ms
@@ -189,7 +185,8 @@ class LeakyIntegrator:
         Leaky integrator = a first-order IIR low-pass filter.
 
         Args:
-            input_signal (npt.NDArray): The impulse response (should be 1-dimensional array or only the 1st column is taken)
+            input_signal (npt.NDArray): The impulse response (should be 1-dimensional array
+            or only the 1st column is taken)
             fs (float): Sample rate
             attack_time_ms (float): Integrator attack time in milliseconds, by default 5
             release_time_ms (float): Integrator release time in milliseconds, by default 50
@@ -225,7 +222,7 @@ class OnsetDetector:
 
     def __init__(
         self,
-        fs: float,
+        fs: int,
         attack_time_ms: float = 5.0,
         release_time_ms: float = 20.0,
         min_onset_hold_ms: float = 80.0,
@@ -243,11 +240,11 @@ class OnsetDetector:
         """
         self.fs = fs
         self.leaky = LeakyIntegrator(fs, attack_time_ms, release_time_ms)
-        self._onset_flag = []
+        self._onset_flag: Optional[List[bool]] = []
         self.min_onset_hold_samps = int(ms_to_samps(min_onset_hold_ms, self.fs))
         self.min_onset_sep_samps = int(ms_to_samps(min_onset_sep_ms, self.fs))
-        self._threshold = None
-        self._signal_env = None
+        self._threshold: Optional[npt.NDArray] = None
+        self._signal_env: Optional[npt.NDArray] = None
 
     @property
     def signal_env(self) -> NDArray:
@@ -262,11 +259,11 @@ class OnsetDetector:
         return self._running_sum_thres
 
     @property
-    def onset_flag(self) -> List[bool]:
+    def onset_flag(self) -> Optional[List[bool]]:
         return self._onset_flag
 
     @staticmethod
-    def check_local_peak(cur_samp: float, prev_samp: float, next_samp: float):
+    def check_local_peak(cur_samp: float, prev_samp: float, next_samp: float) -> bool:
         """
         Given the current, previous and next samples, check if the current sample
         is a local peak
@@ -289,7 +286,7 @@ class OnsetDetector:
         else:
             return True if cur_samp < prev_samp and cur_samp > next_samp else False
 
-    def process(self, input_signal: NDArray, to_plot: bool = False):
+    def process(self, input_signal: NDArray, to_plot: bool = False) -> None:
         """Given an input signal, find the location of onsets"""
         if input_signal.ndim == 2 and input_signal.shape[1] > 1:
             input_signal = input_signal[:, 0]
@@ -351,10 +348,7 @@ class OnsetDetector:
                     self._onset_flag[k] = False
                     inhibit_counter += 1
 
-        if to_plot:
-            ax = self.plot(input_signal)
-
-    def plot(self, input_signal: NDArray):
+    def plot(self, input_signal: NDArray) -> plt.Axes:
         """Plot the input signal and the detected signal, threshold and onsets"""
         num_samp = len(input_signal)
         time_vector = np.arange(0, num_samp / self.fs, 1.0 / self.fs)
@@ -387,7 +381,7 @@ def process_velvet(
 
     try:
         vn_seq = np.loadtxt(vn_seq_path, dtype="f", delimiter=" ")
-    except:
+    except Exception:
         raise OSError("Error reading file!")
 
     output_signal = np.zeros_like(input_signal)
@@ -409,7 +403,7 @@ class StereoWidener(ABC):
         decorr_type: DecorrelationType,
         beta: float,
         detect_transient: bool = False,
-        onset_detection_params: Optional[Dict] = None,
+        onset_detection_params: Optional[Dict[str, float]] = None,
         xfade_win_len_ms: float = 1.0,
     ):
         """Args:
@@ -439,12 +433,12 @@ class StereoWidener(ABC):
         if self.detect_transient:
             if onset_detection_params is not None:
                 self.onset_detector = OnsetDetector(
-                    self.fs,
+                    int(self.fs),
                     min_onset_hold_ms=onset_detection_params["min_onset_hold_ms"],
                     min_onset_sep_ms=onset_detection_params["min_onset_sep_ms"],
                 )
             else:
-                self.onset_detector = OnsetDetector(self.fs)
+                self.onset_detector = OnsetDetector(int(self.fs))
             self.xfade_win_len_samps = int(ms_to_samps(xfade_win_len_ms, self.fs))
             self.xfade_in_win = half_hann_fade(self.xfade_win_len_samps, fade_out=False)
             self.xfade_out_win = half_hann_fade(self.xfade_win_len_samps, fade_out=True)
@@ -469,7 +463,7 @@ class StereoWidener(ABC):
         self.onset_detector.process(input)
         return self.onset_detector.onset_flag
 
-    def process(self):
+    def process(self) -> None:
         pass
 
 
@@ -477,7 +471,7 @@ def filter_in_subbands(
     input_signal: np.ndarray,
     fs: int,
     bands_per_octave: int = 3,
-    freq_range=(20, 16000),
+    freq_range: Tuple[int, int] = (20, 16000),
     filter_length: int = 4096,
 ) -> Tuple[npt.NDArray, npt.NDArray]:
 
@@ -507,12 +501,11 @@ def calculate_interchannel_cross_correlation_matrix(
     channel_axis: int = 0,
     return_single_coeff: bool = False,
     bands_per_octave: int = 3,
-    freq_range=(20, 16000),
-):
+    freq_range: Tuple[int, int] = (20, 16000),
+) -> npt.NDArray:
     """Returns a matrix of ICC values for each channel axis in signals"""
     if time_axis != -1:
         signals = np.moveaxis(signals, 0, 1)
-        channel_axis = 0
         time_axis = -1
 
     # passthrough filterbank
@@ -553,10 +546,10 @@ class StereoWidenerFrequencyBased(StereoWidener):
     def __init__(
         self,
         input_stereo: np.ndarray,
-        fs: float,
+        fs: int,
         filterbank_type: FilterbankType,
         decorr_type: DecorrelationType,
-        beta: Tuple[float, float],
+        beta: List[float],
         cutoff_freq: float,
     ):
         """Frequency based stereo widener
@@ -574,7 +567,7 @@ class StereoWidenerFrequencyBased(StereoWidener):
         self.cutoff_freq = cutoff_freq
         self.get_filter_coefficients()
 
-    def get_filter_coefficients(self):
+    def get_filter_coefficients(self) -> None:
         if self.filterbank_type == FilterbankType.AMP_PRESERVE:
             # Linkwitz Riley crossover filterbank
             filters = pf.dsp.filter.crossover(
@@ -617,16 +610,18 @@ class StereoWidenerFrequencyBased(StereoWidener):
         highpass_signal = self.highpass_filter_coeffs.process(pf_signal).time
         return np.vstack((lowpass_signal, highpass_signal))
 
-    def update_beta(self, new_beta: Tuple[float, float]):
+    def update_beta(self, new_beta: float) -> None:
         self.beta = new_beta
 
-    def update_cutoff_frequency(self, new_cutoff_freq: float):
+    def update_cutoff_frequency(self, new_cutoff_freq: float) -> None:
         self.cutoff_freq = new_cutoff_freq
         self.get_filter_coefficients()
 
-    def process(self):
-        stereo_output = np.zeros_like(self.input_signal)
-        filtered_input = np.zeros((2, self.input_signal.shape[0], self.num_channels))
+    def process(self) -> npt.NDArray:
+        stereo_output: npt.NDArray = np.zeros_like(self.input_signal)
+        filtered_input: npt.NDArray = np.zeros(
+            (2, self.input_signal.shape[0], self.num_channels)
+        )
         filtered_decorr = np.zeros_like(filtered_input)
 
         for chan in range(self.num_channels):
@@ -644,7 +639,9 @@ class StereoWidenerFrequencyBased(StereoWidener):
 
         return stereo_output
 
-    def calculate_interchannel_coherence(self, output_signal: np.ndarray):
+    def calculate_interchannel_coherence(
+        self, output_signal: np.ndarray
+    ) -> Tuple[npt.NDArray, npt.NDArray]:
         icc_matrix, icc_freqs = calculate_interchannel_cross_correlation_matrix(
             output_signal,
             fs=self.fs,

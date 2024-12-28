@@ -8,6 +8,7 @@ __pycache__/
 
 # development directories
 audio/
+.nox/
 
 # Distribution / packaging
 .Python

@@ -11,7 +11,7 @@ Description:
 
 import torch
 
-from typing import Tuple, List, Dict, Union
+from typing import Tuple, List, Dict, Union, Any
 import torchaudio
 
 from ..core.io import audio_to_comfy_3d
@@ -20,7 +20,7 @@ from ..core.loudness import lufs_normalization
 
 class SignalProcessingMixdown:
     @classmethod
-    def INPUT_TYPES(cls) -> Dict:
+    def INPUT_TYPES(cls) -> Dict[str, Any]:
         return {
             "required": {
                 "audio_inputs": ("AUDIO_LIST", {"default": []}),
@@ -36,19 +36,21 @@ class SignalProcessingMixdown:
 
     RETURN_TYPES = ("AUDIO",)
     RETURN_NAMES = ("mixed_audio",)
-    CATEGORY = "Audio Processing"
+    CATEGORY = "Signal Processing"
     FUNCTION = "process"
 
     def process(
         self,
         audio_inputs: List[Dict[str, Union[torch.Tensor, int]]],
         gain_factors: List[float] = [],
-    ) -> Tuple[Dict[str, torch.Tensor], int]:
+    ) -> Tuple[Dict[str, Union[torch.Tensor, int]]]:
         """
-        Mix down multiple audio inputs into a single audio output with optional individual volume controls.
+        Mix down multiple audio inputs into a single audio output
+        with optional individual volume controls.
 
         Parameters:
-            audio_inputs (List[Dict]): List of audio inputs, each containing 'waveform' and 'sample_rate'.
+            audio_inputs (List[Dict]): List of audio inputs,
+            each containing 'waveform' and 'sample_rate'.
             output_normalization (float): Normalization factor for the mixed audio (0.0 to 1.0).
             gain_factors (List[float], optional): List of gain factors for each audio input.
 
@@ -66,11 +68,12 @@ class SignalProcessingMixdown:
             gain_factors = [1.0] * num_audios
         elif len(gain_factors) != num_audios:
             raise ValueError(
-                f"Number of gain factors ({len(gain_factors)}) does not match number of audio inputs ({num_audios})."
+                f"Number of gain factors ({len(gain_factors)}) \
+                    does not match number of audio inputs ({num_audios})."
             )
 
         # Extract sample rates and verify consistency
-        sample_rates = [audio["sample_rate"] for audio in audio_inputs]
+        sample_rates: List[int] = [audio["sample_rate"] for audio in audio_inputs]
         target_sample_rate = sample_rates[0]
 
         for idx, sr in enumerate(sample_rates):
@@ -78,20 +81,23 @@ class SignalProcessingMixdown:
                 resampler = torchaudio.transforms.Resample(
                     orig_freq=sr, new_freq=target_sample_rate
                 )
+
+                _waveform: torch.Tensor = audio_inputs[idx]["waveform"]
                 resampler.to(
-                    device=audio_inputs[idx]["waveform"].device,
-                    dtype=audio_inputs[idx]["waveform"].dtype,
+                    device=_waveform.device,
+                    dtype=_waveform.dtype,
                 )
-                audio_inputs[idx]["waveform"] = resampler(audio_inputs[idx]["waveform"])
+                audio_inputs[idx]["waveform"] = resampler(_waveform)
                 audio_inputs[idx]["sample_rate"] = target_sample_rate
 
         # Determine the maximum length among all audio inputs
-        lengths = [audio["waveform"].shape[-1] for audio in audio_inputs]
+        lengthsw: List[torch.Tensor] = [audio["waveform"] for audio in audio_inputs]
+        lengths: List[int] = [wave.shape[-1] for wave in lengthsw]
         max_length = max(lengths)
 
         # Pad or truncate each audio to match the maximum length and apply gain
         for idx, audio in enumerate(audio_inputs):
-            waveform = audio["waveform"]
+            waveform: torch.Tensor = audio["waveform"]
             current_length = waveform.shape[-1]
             gain = gain_factors[idx]
 
@@ -109,7 +115,7 @@ class SignalProcessingMixdown:
             audio["waveform"] = waveform
 
         # Sum all waveforms to create the mix
-        mixed_waveform = torch.zeros_like(audio_inputs[0]["waveform"])
+        mixed_waveform: torch.Tensor = torch.zeros_like(audio_inputs[0]["waveform"])
         for idx, audio in enumerate(audio_inputs):
             mixed_waveform += audio["waveform"]
 

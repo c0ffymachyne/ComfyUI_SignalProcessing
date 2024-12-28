@@ -6,17 +6,18 @@ License: GPLv3
 Version: 1.0.0
 
 Description:
-    Pad Synth Choir Synthesizer port of code from this article https://zynaddsubfx.sourceforge.io/doc/PADsynth/PADsynth.htm#c_implementation
+    Pad Synth Choir Synthesizer port of code from this article
+    https://zynaddsubfx.sourceforge.io/doc/PADsynth/PADsynth.htm#c_implementation
 """
 
 import torch
 import math
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Any, Union
 
 
 class SignalProcessingPadSynthChoir:
     @classmethod
-    def INPUT_TYPES(cls) -> Dict:
+    def INPUT_TYPES(cls) -> Dict[str, Any]:
         return {
             "required": {
                 "samplerate": (
@@ -53,7 +54,7 @@ class SignalProcessingPadSynthChoir:
         num_notes: int,
         bandwidth_cents: float,
         number_harmonics: int,
-    ) -> Tuple[List[Dict[str, torch.Tensor]]]:
+    ) -> Tuple[List[Dict[str, Union[torch.Tensor, int]]], int]:
         """
         Apply PADsynth choir algorithm to generate multiple audio files.
 
@@ -66,7 +67,8 @@ class SignalProcessingPadSynthChoir:
             number_harmonics (int): Number of harmonics to generate.
 
         Returns:
-            Tuple[List[Dict[str, torch.Tensor]]]: List of generated audios with waveform and sample rate.
+            Tuple[List[Dict[str, torch.Tensor]]]:
+                List of generated audios with waveform and sample rate.
         """
 
         # Define FFT size

@@ -15,16 +15,16 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 
+from typing import Any, Dict, Tuple
+
 from ..core.utilities import comfy_root_to_syspath
 
 comfy_root_to_syspath()  # add comfy to sys path for dev
 
-from ..core.io import audio_to_comfy_3d
-
 
 class SignalProcessingWaveform:
     @classmethod
-    def INPUT_TYPES(cls):
+    def INPUT_TYPES(cls) -> Dict[str, Any]:
         return {
             "required": {
                 "audio_input": ("AUDIO",),
@@ -46,22 +46,21 @@ class SignalProcessingWaveform:
 
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("waveform_image",)
-    CATEGORY = "Audio Processing"
+    CATEGORY = "Signal Processing"
     FUNCTION = "process"
 
     def process(
         self,
-        audio_input,
-        color="white",
-        background_color="black",
-        width=800,
-        height=200,
-        line_width=1.0,
-    ):
+        audio_input: torch.Tensor,
+        color: str = "white",
+        background_color: str = "black",
+        width: int = 800,
+        height: int = 200,
+        line_width: float = 1.0,
+    ) -> Tuple[torch.Tensor]:
         waveform = audio_input.get(
             "waveform"
         )  # [channels, samples] or [batch, channels, samples]
-        sample_rate = audio_input.get("sample_rate")
 
         # Convert to mono by averaging channels
         if waveform.ndim == 3:
@@ -93,7 +92,7 @@ class SignalProcessingWaveform:
 
         # Plot the waveform
         plt.plot(waveform_np, color=color, linewidth=line_width)
-        plt.ylim(-1.1, 1.1)  # Set y-axis limits to -1 and 1
+        plt.ylim(-1.3, 1.3)  # Set y-axis limits to -1 and 1
         plt.tight_layout(pad=0)
 
         # Save the plot to a buffer
@@ -119,7 +118,7 @@ class SignalProcessingWaveform:
 
 class SignalProcessingWaveform2:
     @classmethod
-    def INPUT_TYPES(cls):
+    def INPUT_TYPES(cls) -> Dict[str, Any]:
         return {
             "required": {
                 "audio_input": ("AUDIO",),
@@ -141,22 +140,21 @@ class SignalProcessingWaveform2:
 
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("waveform_image",)
-    CATEGORY = "Audio Processing"
+    CATEGORY = "Signal Processing"
     FUNCTION = "process"
 
     def process(
         self,
-        audio_input,
-        color="black",
-        background_color="white",
-        width=800,
-        height=200,
-        line_width=1.0,
-    ):
+        audio_input: torch.Tensor,
+        color: str = "black",
+        background_color: str = "white",
+        width: int = 800,
+        height: int = 200,
+        line_width: float = 1.0,
+    ) -> Tuple[torch.Tensor]:
         waveform = audio_input.get(
             "waveform"
         )  # [channels, samples] or [batch, channels, samples]
-        sample_rate = audio_input.get("sample_rate")
 
         # Convert to mono by averaging channels
         if waveform.ndim == 3:
@@ -211,21 +209,3 @@ class SignalProcessingWaveform2:
         image = torch.from_numpy(image_np).permute(2, 0, 1).unsqueeze(0)  # [1, 3, H, W]
 
         return (image,)
-
-
-if __name__ == "__main__":
-
-    from pathlib import Path
-    from ..core.io import from_disk_as_raw_2d, audio_to_comfy_3d
-
-    node = SignalProcessingWaveform()
-    samples_path = Path("ComfyUI_SignalProcessing/audio/inputs/song.mp4")
-
-    source_path = samples_path.absolute()
-    source_audio, source_audio_sample_rate = from_disk_as_raw_2d(source_path)
-
-    input = audio_to_comfy_3d(source_audio, source_audio_sample_rate)[0]
-
-    result = node.process(input)[0]
-
-    print("result", result)

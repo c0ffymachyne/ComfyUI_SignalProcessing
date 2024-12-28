@@ -29,7 +29,13 @@ from .processors.SignalProcessingBaxandallEQ import (
     SignalProcessingBaxandallEQ,
     SignalProcessingBaxandall3BandEQ,
 )
-from .processors.SignalProcessingHarmonicsEnhancer import SignalProcessingHarmonicsEnhancer
+from .processors.SignalProcessingHarmonicsEnhancer import (
+    SignalProcessingHarmonicsEnhancer,
+)
+from .processors.SignalProcessingSaturation import SignalProcessingSaturation
+from .processors.SignalProcessingLimiter import SignalProcessingLimiter
+
+# from .processors.SignalProcessingCompressor import SignalProcessingCompressor
 
 # visuals
 from .visuals.SignalProcessingSpectrogram import SignalProcessingSpectrogram
@@ -51,7 +57,10 @@ NODE_CLASS_MAPPINGS = {
     "SignalProcessingLoudness": SignalProcessingLoudness,
     "SignalProcessingBaxandallEQ": SignalProcessingBaxandallEQ,
     "SignalProcessingBaxandall3BandEQ": SignalProcessingBaxandall3BandEQ,
-    "SignalProcessingHarmonicsEnhancer" : SignalProcessingHarmonicsEnhancer
+    "SignalProcessingHarmonicsEnhancer": SignalProcessingHarmonicsEnhancer,
+    "SignalProcessingSaturation": SignalProcessingSaturation,
+    "SignalProcessingLimiter": SignalProcessingLimiter,
+    # "SignalProcessingCompressor": SignalProcessingCompressor,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -70,5 +79,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "SignalProcessingLoudness": "(SP) Loudness",
     "SignalProcessingBaxandallEQ": "(SP) Baxandall EQ",
     "SignalProcessingBaxandall3BandEQ": "(SP) Baxandall 3 Band EQ",
-    "SignalProcessingHarmonicsEnhancer" : "(SP) Enhance Harmonics"
+    "SignalProcessingHarmonicsEnhancer": "(SP) Enhance Harmonics",
+    "SignalProcessingSaturation": "(SP) Saturation",
+    "SignalProcessingLimiter": "(SP) Limiter",
+    # "SignalProcessingCompressor": "(SP) Compressor",
 }

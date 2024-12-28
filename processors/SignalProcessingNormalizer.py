@@ -9,6 +9,8 @@ Description:
     Varios normalizatin techqniues node
 """
 
+import torch
+from typing import Dict, Any, Tuple, Union
 from ..core.io import audio_to_comfy_3d, audio_from_comfy_2d
 from ..core.loudness import (
     rms_normalization,
@@ -20,7 +22,7 @@ from ..core.loudness import (
 
 class SignalProcessingNormalizer:
     @classmethod
-    def INPUT_TYPES(cls):
+    def INPUT_TYPES(cls) -> Dict[str, Any]:
         return {
             "required": {
                 "audio_input": ("AUDIO",),
@@ -50,19 +52,19 @@ class SignalProcessingNormalizer:
 
     RETURN_TYPES = ("AUDIO",)
     RETURN_NAMES = ("processed_audio",)
-    CATEGORY = "Audio Processing"
+    CATEGORY = "Signal Processing"
     FUNCTION = "process"
 
     def process(
         self,
-        audio_input,
+        audio_input: Dict[str, Union[torch.Tensor, int]],
         mode: str,
         target_rms: float,
         target_lufs_db: float,
         target_peak: float,
         target_auto: float,
         target_auto_alpha: float,
-    ):
+    ) -> Tuple[Dict[str, torch.Tensor]]:
 
         waveform, sample_rate = audio_from_comfy_2d(audio_input, try_gpu=True)
 

@@ -16,22 +16,21 @@ Description:
 import torch
 
 import math
-from typing import Tuple, List, Dict
+from typing import Tuple, Dict, Any, Union
 
 from ..core.utilities import comfy_root_to_syspath
-
-comfy_root_to_syspath()  # add comfy to sys path for dev
-
 from ..core.io import audio_from_comfy_2d, audio_to_comfy_3d
 from ..core.loudness import lufs_normalization, get_loudness
+
+comfy_root_to_syspath()  # add comfy to sys path for dev
 
 
 class SignalProcessingPaulStretch:
     @classmethod
-    def INPUT_TYPES(cls) -> Dict:
+    def INPUT_TYPES(cls) -> Dict[str, Any]:
         return {
             "required": {
-                "audio": ("AUDIO", {"forceInput": True}),
+                "audio_input": ("AUDIO", {"forceInput": True}),
                 "stretch_factor": (
                     "FLOAT",
                     {"default": 8.0, "min": 1.0, "max": 100.0, "step": 0.1},
@@ -50,17 +49,21 @@ class SignalProcessingPaulStretch:
 
     def process(
         self,
-        audio: Dict[str, torch.Tensor],
+        audio_input: Dict[str, Union[torch.Tensor, int]],
         stretch_factor: float,
         window_size_seconds: float,
-    ) -> Tuple[Dict[str, torch.Tensor]]:
+    ) -> Tuple[Dict[str, Union[torch.Tensor, int]]]:
 
         # Conditional processing: If stretch_factor is 1.0, return original audio
         if stretch_factor == 1.0:
-            return audio_to_comfy_3d(audio["waveform"], audio["sample_rate"])
+            return audio_to_comfy_3d(
+                audio_input["waveform"], audio_input["sample_rate"]
+            )
 
         # Extract waveform and sample_rate
-        waveform, sample_rate = audio_from_comfy_2d(audio, repeat=True, try_gpu=True)
+        waveform, sample_rate = audio_from_comfy_2d(
+            audio_input, repeat=True, try_gpu=True
+        )
         loudness = get_loudness(waveform, sample_rate)
 
         nchannels, nsamples = waveform.shape
@@ -168,58 +171,13 @@ class SignalProcessingPaulStretch:
         while True:
             n = orig_n
             while (n % 2) == 0:
-                n /= 2
+                n //= 2
             while (n % 3) == 0:
-                n /= 3
+                n //= 3
             while (n % 5) == 0:
-                n /= 5
+                n //= 5
 
             if n < 2:
                 break
             orig_n += 1
         return orig_n
-
-
-if __name__ == "__main__":
-
-    import torchaudio
-    from pathlib import Path
-    from ..core.io import audio_from_comfy_2d, audio_to_comfy_3d, from_disk_as_raw_2d
-    from ..core.mixing import combine_audio_files
-
-    node = SignalProcessingPaulStretch()
-    types = node.INPUT_TYPES()
-
-    samples_path = Path("ComfyUI_SignalProcessing/audio/samples")
-
-    samples = list(samples_path.rglob("*.*"))
-
-    print(samples)
-
-    source_path = samples[1].absolute()
-    source_audio, source_audio_sample_rate = from_disk_as_raw_2d(source_path)
-
-    input = audio_to_comfy_3d(source_audio, source_audio_sample_rate)[0]
-
-    window_size_seconds = 0.25
-    stretch_factor = 2.0
-
-    result = node.process(
-        input, stretch_factor=stretch_factor, window_size_seconds=window_size_seconds
-    )[0]
-
-    output_audio, sample_rate_audio = audio_from_comfy_2d(result)
-
-    combined = combine_audio_files(
-        source_audio.cpu(), output_audio.cpu(), sample_rate_audio, chunk_duration=4.0
-    )
-
-    torchaudio.save(
-        "ComfyUI_SignalProcessing/audio/tests/paulstretch.wav",
-        combined.cpu(),
-        sample_rate_audio,
-    )
-
-    # set console to comfy ComfyUI-0.2.4/custom_nodes and run below command
-    # export coffy_local_dev=1
-    # python3 -m ComfyUI_SignalProcessing.effects.SignalProcessingPitchShifter

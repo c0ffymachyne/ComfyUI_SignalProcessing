@@ -6,20 +6,21 @@ License: GPLv3
 Version: 1.0.0
 
 Description:
-    Pad Synthesiser port of code from this article https://zynaddsubfx.sourceforge.io/doc/PADsynth/PADsynth.htm#c_implementation
+    Pad Synthesiser port of code from this article :
+    https://zynaddsubfx.sourceforge.io/doc/PADsynth/PADsynth.htm#c_implementation
 """
 
 
 import torch
-import math, json
-from typing import Tuple, List, Dict
+import math
+from typing import Tuple, Dict, Any, Union
 
 from ..core.io import audio_to_comfy_3d
 
 
 class SignalProcessingPadSynth:
     @classmethod
-    def INPUT_TYPES(cls) -> Dict:
+    def INPUT_TYPES(cls) -> Dict[str, Any]:
         return {
             "required": {
                 "sample_rate": (
@@ -52,7 +53,7 @@ class SignalProcessingPadSynth:
         fundamental_freq: float,
         bandwidth_cents: float,
         number_harmonics: int,
-    ) -> Tuple[Dict[str, torch.Tensor]]:
+    ) -> Tuple[Dict[str, Union[torch.Tensor, int]]]:
         """
         Apply PADsynth algorithm to generate audio.
 

@@ -6,12 +6,12 @@ License: GPLv3
 Version: 1.0.0
 
 Description:
-    Classic Audio filter set 
+     The code defines a classic audio filter set for performing various audio processing tasks such as filtering out unwanted frequencies
 """
 
-import torch, torchaudio
 import torch
-from typing import Dict
+import torchaudio
+from typing import Dict, Any, Tuple, Union
 
 from ..core.io import audio_to_comfy_3d, audio_from_comfy_3d
 from ..core.loudness import lufs_normalization, get_loudness
@@ -19,10 +19,10 @@ from ..core.loudness import lufs_normalization, get_loudness
 
 class SignalProcessingFilter:
     @classmethod
-    def INPUT_TYPES(cls):
+    def INPUT_TYPES(cls) -> Dict[str, Any]:
         return {
             "required": {
-                "audio": ("AUDIO", {"forceInput": True}),
+                "audio_input": ("AUDIO", {"forceInput": True}),
                 "cutoff": (
                     "FLOAT",
                     {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01},
@@ -41,15 +41,15 @@ class SignalProcessingFilter:
     RETURN_TYPES = ("AUDIO", "INT")
     RETURN_NAMES = ("audio", "sample_rate")
     CATEGORY = "Signal Processing"
-    FUNCTION = "apply_filter"
+    FUNCTION = "process"
 
-    def apply_filter(
+    def process(
         self,
-        audio: Dict[str, torch.Tensor],
+        audio_input: Dict[str, Union[torch.Tensor, int]],
         cutoff: float,
         filter_type: str,
         q_factor: float,
-    ):
+    ) -> Tuple[Dict[str, Union[torch.Tensor, int]]]:
         """
         Apply a specified filter to the input audio.
 
@@ -63,7 +63,7 @@ class SignalProcessingFilter:
             Tuple[Dict[str, torch.Tensor]]: Filtered audio.
         """
 
-        waveform, sample_rate = audio_from_comfy_3d(audio)
+        waveform, sample_rate = audio_from_comfy_3d(audio_input)
 
         loudness = get_loudness(waveform, sample_rate)
 
@@ -94,13 +94,6 @@ class SignalProcessingFilter:
         elif filter_type in ["bandpass", "bandstop"]:
             center_freq = cutoff_freq
             # Ensure that the bandwidth does not exceed the Nyquist frequency
-            bandwidth = center_freq / q_factor
-            lower_freq = max(
-                center_freq - bandwidth / 2.0, 20.0
-            )  # Prevent dropping below 20 Hz
-            upper_freq = min(
-                center_freq + bandwidth / 2.0, nyquist - 100.0
-            )  # Prevent exceeding Nyquist
 
             if filter_type == "bandpass":
                 filtered_waveform = torchaudio.functional.bandpass_biquad(

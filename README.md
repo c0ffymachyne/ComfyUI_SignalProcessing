@@ -17,11 +17,9 @@ This repo contains signal processing nodes for [ComfyUI](https://github.com/comf
 
 ### Latests Updates
 
-- **`Clipping removal`** - removed all the clipping functions to ensure audio is not clipped throught processing chain
-- **`Double-precision floating-point`** - changed internal processing to use double precision floating point. 
-- **`Keeping loudness`** - all processing nodes use lufs loudness normalization to keep pre-processing gain.
-- **`GPU support`** - ported some of the nodes to gpu to gain speed
-- **`Removed some nodes`** - if you want them back contact me through this repository. I am planning to add new nodes with better quality
+- **`Gpu limiter - experimental`** - Limiter optimized for parallel GPU execution
+- **`Saturatation - experimental`** - Added basic saturation node with couple algorithms
+- **`Tests suite`** - Added basic tests suite for most of the nodes
 
 ---
 
@@ -48,7 +46,7 @@ Implementation is using the standard shelf filter equations from the Audio EQ Co
 
 ### Enhance Harmonics
 
-Harmonic enhancer boosts selected harmonics to enrich the sound
+Harmonic enhancer boosts selected harmonics to enrich the sound. 
 
 #### Parameters:
 
@@ -230,3 +228,25 @@ This node lets you stretch audio to about 100x it's original speed whil mainting
 
 - **`audio_file`**: input audio file
 - **`gain`**: when to start audio from
+
+
+### Development and Testing/Profiling
+
+### Dependnecies:
+
+The development dependencies are specified in the pyproject.toml file and are not included in the requirements.txt. 
+To run tests and contribute to development, you'll need the following tools and modules installed. 
+My primary development and testing environment is Ubuntu Linux with an RTX 3090 GPU and CUDA 11.8.
+
+## Required Tools and Libraries:
+
+-**`scalene`**: High-performance CPU and GPU profiler.
+-**`pytest`**: Comprehensive testing framework.
+-**`nox`**: Automation tool for managing tasks.
+-**`ruff/flake8`**: Linter for ensuring clean and consistent code.
+
+### Contributing
+
+Contributions are always welcome! Feel free to fork the repository, make changes, and create a pull request. 
+I'm open to collaboration and willing to make adjustments to improve the project. 
+Let's build something great together! 🚀

@@ -10,19 +10,18 @@ Description:
 """
 
 import os
-import torch, torchaudio
+import torch
+import torchaudio
 import torch.nn.functional as F
-from pathlib import Path
+
+from typing import Dict, Tuple, Union
 
 from ..core.utilities import comfy_root_to_syspath
-
-comfy_root_to_syspath()  # add comfy to sys path for dev
-
 from ..core.io import audio_from_comfy_2d, audio_to_comfy_3d, from_disk_as_raw_2d
 from ..core.loudness import lufs_normalization, get_loudness
-
-
 import folder_paths
+
+comfy_root_to_syspath()  # add comfy to sys path for dev
 
 
 class SignalProcessingConvolutionReverb:
@@ -31,7 +30,7 @@ class SignalProcessingConvolutionReverb:
     ir_directory = os.path.join(os.path.split(this_directory)[0], "audio", "ir")
 
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(s) -> Dict[str, torch.Tensor]:
 
         files, _ = folder_paths.recursive_search(
             SignalProcessingConvolutionReverb.ir_directory
@@ -43,7 +42,7 @@ class SignalProcessingConvolutionReverb:
                 _, ext = os.path.splitext(file)
                 if ext in SignalProcessingConvolutionReverb.supported_formats:
                     ir_files.append(file)
-            except:
+            except Exception:
                 pass
 
         return {
@@ -67,13 +66,15 @@ class SignalProcessingConvolutionReverb:
     CATEGORY = "Signal Processing"
     FUNCTION = "process"
 
-    def process(self, impulse_response, audio_input, wet_dry):
+    def process(
+        self,
+        impulse_response: str,
+        audio_input: Dict[str, Union[torch.Tensor, int]],
+        wet_dry: float,
+    ) -> Tuple[Dict[str, Union[torch.Tensor, int]]]:
 
         try_gpu: bool = True
         repeat: bool = True
-
-        print(impulse_response)
-        print(audio_input)
 
         waveform, sample_rate = audio_from_comfy_2d(
             audio_input, repeat=repeat, try_gpu=try_gpu
@@ -84,25 +85,23 @@ class SignalProcessingConvolutionReverb:
         it_filepath = os.path.join(
             SignalProcessingConvolutionReverb.ir_directory, impulse_response
         )
+
         ir, ir_sr = from_disk_as_raw_2d(it_filepath, repeat=repeat, try_gpu=try_gpu)
 
         # Resample IR if sampling rates do not match
         if ir_sr != sample_rate:
-            print(f"Resampling impulse response from {ir_sr} Hz to {sample_rate} Hz.")
             resampler = torchaudio.transforms.Resample(
                 orig_freq=ir_sr, new_freq=sample_rate
             ).to(ir.device, dtype=waveform.dtype)
             ir = resampler(ir)
             ir_sr = sample_rate
 
-        print("ensure channels")
         # if wave is mono and ir is not mono
         if waveform.shape[0] == 1 and ir.shape[0] == 2:
             ir = ir.mean(dim=0, keepdim=True)
         if waveform.shape[0] == 2 and ir.shape[0] == 1:
             ir = ir.repeat(2, 1)
 
-        print("apply reverb")
         processed_audio = self.apply_reverb(waveform, sample_rate, ir, wet_dry=wet_dry)
         processed_audio = lufs_normalization(processed_audio, sample_rate, loudness)
 
@@ -162,35 +161,3 @@ class SignalProcessingConvolutionReverb:
         processed_audio = torch.stack(processed_channels)  # Shape: [2, N]
 
         return processed_audio
-
-
-if __name__ == "__main__":
-
-    import torchaudio
-    from pathlib import Path
-    from ..core.io import audio_from_comfy_2d, audio_to_comfy_3d, from_disk_as_raw_2d
-
-    node = SignalProcessingConvolutionReverb()
-    types = node.INPUT_TYPES()
-
-    samples_path = Path("ComfyUI_SignalProcessing/audio/samples")
-    impulses_path = Path("ComfyUI_SignalProcessing/audio/ir")
-
-    samples = list(samples_path.rglob("*.*"))
-    impulses = list(impulses_path.rglob("*.*"))
-
-    print(samples)
-
-    s = samples[1].absolute()
-    i = impulses[0].absolute()
-    s, sr = from_disk_as_raw_2d(s)
-
-    sound = audio_to_comfy_3d(s, sr)[0]
-
-    result = node.process(i, sound, wet_dry=0.5)[0]
-    audio, sr = audio_from_comfy_2d(result)
-    torchaudio.save("ComfyUI_SignalProcessing/audio/tests/reverb.wav", audio.cpu(), sr)
-
-    # set console to comfy ComfyUI-0.2.4/custom_nodes and run below command
-    # export coffy_local_dev=1
-    # python3 -m ComfyUI_SingalProcessing.effects.SignalProcessingConvolutionReverb
