@@ -4,4 +4,4 @@ numpy
 torch
 torchaudio
 pyloudnorm
-cupy
+cupy-cuda11x
