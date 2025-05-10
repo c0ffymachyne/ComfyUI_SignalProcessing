@@ -27,5 +27,5 @@ other = [
     "pyfar",
     "scipy",
     "pyloudnorm",
-    "cupy"
+    "cupy-cuda11x"
 ]
