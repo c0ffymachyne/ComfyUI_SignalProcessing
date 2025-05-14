@@ -6,6 +6,8 @@
 
 This repo contains signal processing nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) allowing for audio manipulation. 
 
+[DeepWiki Documentation](https://deepwiki.com/c0ffymachyne/ComfyUI_SignalProcessing)
+
 
 #### Licensing And Attribution
 
